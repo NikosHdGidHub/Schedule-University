@@ -851,17 +851,7 @@
         const todayIdx = getTodayIndex();
         const todayDate = getDateByDayIndex(todayIdx);
 
-        // Проверка на праздник сегодня
-        const holidayToday = getHolidayDescription(todayDate);
-        if (holidayToday) {
-            container.innerHTML = `
-                <div class="main-info">
-                    <span class="lesson-name" style="font-size: 1.1rem;">🙂 ${holidayToday}</span>
-                </div>
-                <div class="no-lessons" style="margin-top: 6px; font-style: normal;">Занятий нет</div>
-            `;
-            return;
-        }
+        
 
         // Все занятия сегодня
         let todayLessons = getLessonsForDay(todayIdx, state.currentWeek, todayDate);
