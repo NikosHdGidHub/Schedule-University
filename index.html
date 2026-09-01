@@ -580,7 +580,8 @@
     const state = {
         currentWeek: getDefaultWeek(),
         filterToday: false,
-        theme: 'light'
+        theme: 'light',
+    	notificationTimer: null 
     };
 
     // ---------- КЭШ DOM ----------
@@ -595,6 +596,123 @@
     };
 
     // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------
+
+	/** Запрашивает разрешение на уведомления (если ещё не запрошено) */
+	function requestNotificationPermission() {
+		if (!('Notification' in window)) {
+			console.log('Этот браузер не поддерживает уведомления');
+			return;
+		}
+		if (Notification.permission === 'granted') {
+			console.log('Уведомления уже разрешены');
+			return;
+		}
+		if (Notification.permission === 'denied') {
+			console.log('Уведомления были запрещены пользователем');
+			return;
+		}
+		// Если статус 'default' — запрашиваем
+		Notification.requestPermission().then(perm => {
+			if (perm === 'granted') {
+				console.log('✅ Уведомления разрешены!');
+			} else {
+				console.log('❌ Уведомления запрещены');
+			}
+		});
+	}
+
+	/** Показывает уведомление о предстоящей паре */
+	function showLessonNotification(lesson, startTime, dayName) {
+		if (Notification.permission !== 'granted') return;
+		const options = {
+			body: `Преподаватель: ${lesson.teacher}\nАудитория: ${lesson.room}`,
+			icon: '📚', // можно заменить на картинку, если есть
+			silent: false,
+			vibrate: [200, 100, 200],
+		};
+		const notif = new Notification(`⏰ Скоро начнётся: ${lesson.name} в ${startTime}`, options);
+		// Автоматически закрываем через 10 секунд
+		setTimeout(() => notif.close(), 10000);
+	}
+
+	/** Планирует уведомление о следующей паре */
+	function scheduleNotification() {
+		// Очищаем старый таймер, если он был
+		if (state.notificationTimer) {
+			clearTimeout(state.notificationTimer);
+			state.notificationTimer = null;
+		}
+
+		// Находим следующую пару (используем логику из updateNextLesson, но без отрисовки)
+		const now = new Date();
+		const currentTimeStr = now.toTimeString().slice(0, 5);
+		const todayIdx = getTodayIndex();
+		const todayDate = getDateByDayIndex(todayIdx);
+
+		if (getHolidayDescription(todayDate)) return;
+
+		let todayLessons = getLessonsForDay(todayIdx, state.currentWeek, todayDate);
+		todayLessons.sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
+
+		let nextLesson = null;
+		for (const lesson of todayLessons) {
+			const slot = TIME_SLOTS[lesson.slot];
+			if (slot && slot.start >= currentTimeStr) {
+				nextLesson = lesson;
+				break;
+			}
+		}
+
+		let targetDay = todayIdx;
+		let targetLesson = nextLesson;
+
+		if (!targetLesson) {
+			for (let offset = 1; offset <= NUMBER_OF_DAYS; offset++) {
+				let checkDay = todayIdx + offset;
+				if (checkDay > NUMBER_OF_DAYS) checkDay -= NUMBER_OF_DAYS;
+				const checkDate = getDateByDayIndex(checkDay);
+				const dayLessons = getLessonsForDay(checkDay, state.currentWeek, checkDate);
+				if (dayLessons.length > 0) {
+					const sorted = [...dayLessons].sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
+					targetLesson = sorted[0];
+					targetDay = checkDay;
+					break;
+				}
+			}
+		}
+
+		if (!targetLesson) return;
+
+		const slot = TIME_SLOTS[targetLesson.slot];
+		if (!slot) return;
+
+		const [startHour, startMinute] = slot.start.split(':').map(Number);
+		let startDate = new Date(now);
+		startDate.setHours(startHour, startMinute, 0, 0);
+		if (targetDay !== todayIdx) {
+			let diffDays = targetDay - todayIdx;
+			if (diffDays < 0) diffDays += NUMBER_OF_DAYS;
+			startDate.setDate(startDate.getDate() + diffDays);
+		}
+
+		// Время до начала пары
+		const timeToStart = startDate.getTime() - now.getTime();
+		// Уведомление за 5 минут до начала (300 000 мс)
+		const notificationOffset = 5 * 60 * 1000;
+		const notifyAt = timeToStart - notificationOffset;
+
+		// Если уведомление можно запланировать (осталось больше 5 минут)
+		if (notifyAt > 1000) {
+			state.notificationTimer = setTimeout(() => {
+				const dayName = (targetDay !== todayIdx) ? DAY_NAMES[targetDay-1] : 'сегодня';
+				showLessonNotification(targetLesson, slot.start, dayName);
+			}, notifyAt);
+			console.log(`🔔 Уведомление запланировано для ${targetLesson.name} через ${Math.floor(notifyAt / 60000)} мин`);
+		} else {
+			// Если до начала меньше 5 минут, не планируем (или можно показать сразу, но не нужно)
+			console.log(`⏳ До начала ${targetLesson.name} менее 5 минут, уведомление не планируется`);
+		}
+	}
 
     /** Определяет тип текущей недели ('even' или 'odd') на основе даты */
     function getDefaultWeek() {
@@ -815,6 +933,7 @@
             </div>
             <div class="countdown ${isUrgent ? 'urgent' : ''}">${countdownText}</div>
         `;
+		scheduleNotification();
     }
 
     // ---------- ОСНОВНАЯ ОТРИСОВКА РАСПИСАНИЯ ----------
@@ -998,6 +1117,11 @@
     // ---------- ЗАПУСК ПРИЛОЖЕНИЯ ----------
 
     function init() {
+		// Запрос разрешения на уведомления (если браузер поддерживает)
+		if ('Notification' in window) {
+			requestNotificationPermission();
+		}
+
         // Восстанавливаем состояние из localStorage
         
         const savedFilter = localStorage.getItem('filterToday');
