@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расписание ВУЗ</title>
+    <style>
+       /* ========== ОСНОВНЫЕ ПЕРЕМЕННЫЕ ========== */
+		:root {
+			/* Цвета фона */
+			--bg-page: #f4f7fb;
+			--bg-card: #ffffff;
+			--bg-header: #f8fafc;
+			--bg-today: #f8faff;
+			--bg-current-lesson: #ecfdf5;
+			--bg-next-lesson: #ffffff;
+			--bg-empty-slot: #f8fafc;
+			--bg-holiday: #fef9c3;
+			--bg-badge: #e2e8f0;
+			--bg-badge-today: #bfdbfe;
+			--bg-btn: #ffffff;
+			--bg-btn-hover: #e2e8f0;
+			--bg-btn-active: #1e293b;
+			--bg-countdown: #eff6ff;
+			--bg-countdown-urgent: #fee2e2;
+			--bg-current-time: #d1fae5;
+			
+			/* Цвета текста */
+			--text-primary: #1e293b;
+			--text-secondary: #475569;
+			--text-muted: #94a3b8;
+			--text-heading: #0f172a;
+			--text-badge: #475569;
+			--text-badge-today: #1e40af;
+			--text-btn: #334155;
+			--text-btn-active: #ffffff;
+			--text-countdown: #3b82f6;
+			--text-countdown-urgent: #dc2626;
+			--text-current-label: #065f46;
+			--text-current-time: #059669;
+			--text-holiday: #1e293b;
+			--text-empty: #94a3b8;
+			
+			/* Цвета границ */
+			--border-card: #94a3b8;
+			--border-today: #3b82f6;
+			--border-light: #e9edf2;
+			--border-current: #10b981;
+			--border-current-item: #d1fae5;
+			--border-lesson: #f1f5f9;
+			--border-btn: #cbd5e1;
+			--border-btn-active: #1e293b;
+			
+			/* Тени */
+			--shadow-card: 0 4px 12px rgba(0,0,0,0.05);
+			--shadow-today: 0 4px 16px rgba(59, 130, 246, 0.15);
+			--shadow-next: 0 8px 24px rgba(0,0,0,0.08);
+			--shadow-current: 0 8px 24px rgba(0,0,0,0.08);
+		}
+
+		/* ========== ТЁМНАЯ ТЕМА ========== */
+		body.dark-theme {
+			--bg-page: #0f172a;
+			--bg-card: #1e293b;
+			--bg-header: #2d3748;
+			--bg-today: #1e2a3a;
+			--bg-current-lesson: #1a2a2f;
+			--bg-next-lesson: #1e293b;
+			--bg-empty-slot: #2d3748;
+			--bg-holiday: #422b2b;
+			--bg-badge: #334155;
+			--bg-badge-today: #1e3a5f;
+			--bg-btn: #1e293b;
+			--bg-btn-hover: #334155;
+			--bg-btn-active: #3b82f6;
+			--bg-countdown: #1e3a5f;
+			--bg-countdown-urgent: #4c1d1d;
+			--bg-current-time: #1a3a34;
+			
+			--text-primary: #e2e8f0;
+			--text-secondary: #94a3b8;
+			--text-muted: #64748b;
+			--text-heading: #f1f5f9;
+			--text-badge: #cbd5e1;
+			--text-badge-today: #93c5fd;
+			--text-btn: #cbd5e1;
+			--text-btn-active: #ffffff;
+			--text-countdown: #60a5fa;
+			--text-countdown-urgent: #f87171;
+			--text-current-label: #6ee7b7;
+			--text-current-time: #6ee7b7;
+			--text-holiday: #fcd34d;
+			--text-empty: #64748b;
+			
+			--border-card: #475569;
+			--border-today: #60a5fa;
+			--border-light: #334155;
+			--border-current: #34d399;
+			--border-current-item: #1a3a34;
+			--border-lesson: #334155;
+			--border-btn: #475569;
+			--border-btn-active: #3b82f6;
+			
+			--shadow-card: 0 4px 12px rgba(0,0,0,0.3);
+			--shadow-today: 0 4px 16px rgba(96, 165, 250, 0.25);
+			--shadow-next: 0 8px 24px rgba(0,0,0,0.4);
+			--shadow-current: 0 8px 24px rgba(0,0,0,0.4);
+		}
+
+		/* ========== ОБЩИЕ СТИЛИ ========== */
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+			background: var(--bg-page);
+			padding: 16px;
+			max-width: 900px;
+			margin: 0 auto;
+			color: var(--text-primary);
+			transition: background 0.3s, color 0.3s;
+		}
+
+		h1 {
+			text-align: center;
+			font-weight: 600;
+			font-size: 1.8rem;
+			margin-bottom: 16px;
+			color: var(--text-heading);
+			letter-spacing: -0.5px;
+			transition: color 0.3s;
+		}
+
+		/* ========== ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ ========== */
+		.header-container {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 16px;
+		}
+		.header-container h1 {
+			margin: 0;                    /* убираем отступ по умолчанию */
+			flex: 1;                      /* занимает всё доступное пространство */
+			text-align: center;           /* центрируем текст относительно контейнера */
+		}
+		.theme-btn {
+			background: var(--bg-card);
+			border: 2px solid var(--border-btn);
+			border-radius: 40px;
+			padding: 8px 16px;
+			font-size: 1.2rem;
+			cursor: pointer;
+			transition: background 0.2s, border-color 0.2s, color 0.2s;
+			color: var(--text-btn);
+		}
+		.theme-btn:hover {
+			background: var(--bg-btn-hover);
+		}
+
+		/* ========== ПЕРЕКЛЮЧАТЕЛЬ НЕДЕЛЬ ========== */
+		.week-switcher {
+			display: flex;
+			justify-content: center;
+			gap: 12px;
+			margin-bottom: 24px;
+		}
+
+		.tab-btn {
+			padding: 10px 28px;
+			border: 2px solid var(--border-btn);
+			background: var(--bg-card);
+			border-radius: 40px;
+			font-weight: 600;
+			font-size: 1rem;
+			cursor: pointer;
+			transition: 0.2s;
+			color: var(--text-btn);
+		}
+		.tab-btn:hover {
+			background: var(--bg-btn-hover);
+		}
+		.tab-btn.active {
+			background: var(--bg-btn-active);
+			border-color: var(--border-btn-active);
+			color: var(--text-btn-active);
+		}
+		.tab-btn.active:hover {
+			background: var(--bg-btn-active);
+		}
+		
+		/* дополнительный стиль для кнопки фильтра, чтобы отделить её от кнопок недель */
+		.today-filter {
+			margin-left: 8px;
+		}
+		.tab-btn.active.today-filter {
+			background: var(--bg-btn-active);
+			border-color: var(--border-btn-active);
+			color: var(--text-btn-active);
+		}
+
+		/* ========== БЛОК "ТЕКУЩАЯ ПАРА" ========== */
+		.current-lesson-block {
+			background: var(--bg-current-lesson);
+			border-radius: 20px;
+			box-shadow: var(--shadow-current);
+			padding: 20px 24px;
+			margin-bottom: 16px;
+			border-left: 6px solid var(--border-current);
+			transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+		}
+		.current-lesson-block .current-lesson-label {
+			font-weight: 700;
+			color: var(--text-current-label);
+			font-size: 1.1rem;
+			margin-bottom: 10px;
+			transition: color 0.3s;
+		}
+		.current-lesson-item {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: baseline;
+			gap: 8px 20px;
+			padding: 8px 0;
+			border-bottom: 1px solid var(--border-current-item);
+			transition: border-color 0.3s;
+		}
+		.current-lesson-item:last-child {
+			border-bottom: none;
+		}
+		.current-lesson-item .lesson-name {
+			font-weight: 700;
+			font-size: 1.1rem;
+			color: var(--text-heading);
+			transition: color 0.3s;
+		}
+		.current-lesson-item .lesson-meta {
+			font-size: 0.95rem;
+			color: var(--text-secondary);
+			transition: color 0.3s;
+		}
+		.current-lesson-item .time-left {
+			font-weight: 600;
+			color: var(--text-current-time);
+			background: var(--bg-current-time);
+			padding: 2px 12px;
+			border-radius: 30px;
+			transition: background 0.3s, color 0.3s;
+		}
+
+		/* ========== БЛОК "СЛЕДУЮЩАЯ ПАРА" ========== */
+		.next-lesson-block {
+			background: var(--bg-next-lesson);
+			border-radius: 20px;
+			box-shadow: var(--shadow-next);
+			padding: 20px 24px;
+			margin-bottom: 28px;
+			border-left: 6px solid var(--border-today);
+			transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+		}
+		.next-lesson-block .label {
+			font-size: 0.85rem;
+			font-weight: 500;
+			color: var(--text-secondary);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			margin-bottom: 6px;
+			transition: color 0.3s;
+		}
+		.next-lesson-block .main-info {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: baseline;
+			gap: 12px 20px;
+		}
+		.next-lesson-block .lesson-name {
+			font-size: 1.3rem;
+			font-weight: 700;
+			color: var(--text-heading);
+			transition: color 0.3s;
+		}
+		.next-lesson-block .lesson-meta {
+			font-size: 0.95rem;
+			color: var(--text-secondary);
+			display: flex;
+			flex-wrap: wrap;
+			gap: 16px;
+			transition: color 0.3s;
+		}
+		.next-lesson-block .lesson-meta span {
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+		}
+		.next-lesson-block .countdown {
+			margin-top: 10px;
+			font-size: 1.1rem;
+			font-weight: 600;
+			color: var(--text-countdown);
+			background: var(--bg-countdown);
+			padding: 8px 16px;
+			border-radius: 40px;
+			display: inline-block;
+			transition: background 0.3s, color 0.3s;
+		}
+		.next-lesson-block .countdown.urgent {
+			color: var(--text-countdown-urgent);
+			background: var(--bg-countdown-urgent);
+		}
+		.next-lesson-block .no-lessons {
+			font-size: 1.1rem;
+			color: var(--text-muted);
+			transition: color 0.3s;
+		}
+
+		/* ========== ПРАЗДНИКИ ========== */
+		.holiday-message {
+			padding: 30px 20px;
+			text-align: center;
+			font-size: 1.3rem;
+			color: var(--text-holiday);
+			background: var(--bg-holiday);
+			border-radius: 12px;
+			margin: 12px 20px;
+			transition: background 0.3s, color 0.3s;
+		}
+		.holiday-message .holiday-icon {
+			font-size: 2.5rem;
+			display: block;
+			margin-bottom: 8px;
+		}
+		.holiday-message .holiday-text {
+			font-weight: 600;
+		}
+
+		/* ========== СЕТКА ДНЕЙ ========== */
+		.schedule-grid {
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+		}
+
+		.day-card {
+			background: var(--bg-card);
+			border-radius: 20px;
+			box-shadow: var(--shadow-card);
+			overflow: hidden;
+			border-left: 6px solid var(--border-card);
+			transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+		}
+		.day-card.today {
+			border-left-color: var(--border-today);
+			background: var(--bg-today);
+			box-shadow: var(--shadow-today);
+		}
+
+		.day-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 14px 20px;
+			background: var(--bg-header);
+			border-bottom: 1px solid var(--border-light);
+			font-weight: 600;
+			font-size: 1.1rem;
+			transition: background 0.3s, border-color 0.3s;
+		}
+		.day-header .date-badge {
+			background: var(--bg-badge);
+			padding: 4px 12px;
+			border-radius: 30px;
+			font-size: 0.8rem;
+			font-weight: 400;
+			color: var(--text-badge);
+			transition: background 0.3s, color 0.3s;
+		}
+		.day-card.today .day-header {
+			background: var(--bg-today);
+		}
+		.day-card.today .date-badge {
+			background: var(--bg-badge-today);
+			color: var(--text-badge-today);
+		}
+
+		.lesson-list {
+			padding: 8px 0;
+		}
+
+		.lesson-item {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 12px 20px;
+			border-bottom: 1px solid var(--border-lesson);
+			transition: background 0.3s, border-color 0.3s;
+		}
+		.lesson-item:last-child {
+			border-bottom: none;
+		}
+		.lesson-item.current {
+			background: var(--bg-current-lesson);
+			border-left: 4px solid var(--border-current);
+		}
+		.lesson-item.empty-slot {
+			background: var(--bg-empty-slot);
+			opacity: 0.7;
+			border-left: 3px solid var(--border-card);
+		}
+		.lesson-item.empty-slot .lesson-name {
+			color: var(--text-empty);
+			font-style: italic;
+		}
+		.lesson-time {
+			font-weight: 500;
+			color: var(--text-primary);
+			min-width: 90px;
+			font-size: 0.95rem;
+			transition: color 0.3s;
+		}
+		.lesson-info {
+			flex: 1;
+		}
+		.lesson-name {
+			font-weight: 600;
+			font-size: 1rem;
+			color: var(--text-primary);
+			transition: color 0.3s;
+		}
+		.lesson-meta {
+			font-size: 0.85rem;
+			color: var(--text-secondary);
+			display: flex;
+			flex-wrap: wrap;
+			gap: 12px;
+			margin-top: 2px;
+			transition: color 0.3s;
+		}
+		.lesson-meta span {
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+		}
+		.lesson-meta .icon {
+			font-size: 0.9rem;
+		}
+		.no-lessons {
+			padding: 20px;
+			text-align: center;
+			color: var(--text-muted);
+			font-style: italic;
+			transition: color 0.3s;
+		}
+
+		/* ========== АДАПТИВНОСТЬ ========== */
+		@media (max-width: 500px) {
+			.lesson-item {
+				flex-wrap: wrap;
+				gap: 6px;
+			}
+			.lesson-time {
+				min-width: 70px;
+				font-size: 0.85rem;
+			}
+			.day-header {
+				font-size: 1rem;
+				padding: 10px 16px;
+			}
+			.tab-btn {
+				padding: 8px 20px;
+				font-size: 0.9rem;
+			}
+			.theme-btn {
+				font-size: 1rem;
+				padding: 6px 12px;
+			}
+		}
+    </style>
+</head>
+<body>
+	<div class="header-container">
+		<h1>📚 Расписание</h1>
+		<button id="themeToggle" class="theme-btn">🌙</button>
+	</div>
+	
+    <div class="week-switcher">
+        <button class="tab-btn week-btn" data-week="even">Чётная</button>
+        <button class="tab-btn week-btn" data-week="odd">Нечётная</button>
+		<button id="todayFilterBtn" class="tab-btn today-filter">📅 Сегодня</button>
+    </div>
+	<div id="currentLessonBlock" class="current-lesson-block" style="display: none;">
+		<div id="currentLessonContent"></div>
+	</div>
+	<div id="nextLessonBlock" class="next-lesson-block">
+		<div class="label">⏳ Следующая пара</div>
+		<div id="nextLessonContent">
+			<!-- заполняется скриптом -->
+		</div>
+	</div>
+    <div id="scheduleContainer" class="schedule-grid">
+        <!-- сюда будет вставлено расписание -->
+    </div>
+
+<script>// ================================================================
+//  МОДУЛЬ РАСПИСАНИЯ (структурированная версия)
+// ================================================================
+
+(function() {
+    'use strict';
+
+    // ---------- КОНФИГУРАЦИЯ ----------
+    // Временные слоты пар
+    const TIME_SLOTS = [
+        { start: '10:00', end: '11:20' },
+        { start: '11:30', end: '12:50' },
+        { start: '13:00', end: '14:20' },
+        { start: '15:00', end: '16:20' },
+        { start: '16:30', end: '17:50' }
+    ];
+
+    // Основные данные расписания dateStart - дата начала
+    const LESSONS_DATA = [
+        // Понедельник
+        { day: 1, slot: 0, name: 'Математические методы в психологии', room: '414', teacher: 'Гурова Е.И.', weekType: 'both' },
+        { day: 1, slot: 1, name: 'Социальная психология', room: '317', teacher: 'Борискина А.А.', weekType: 'both' },
+        { day: 1, slot: 2, name: 'Социальная психология', room: '414', teacher: 'Борискина А.А.', weekType: 'both' },
+        { day: 1, slot: 3, name: 'Иностранный язык', room: '317', teacher: 'Татаринова О.В.', weekType: 'both' },
+        { day: 1, slot: 4, name: 'Патрология', room: '315', teacher: 'Зоитакис А.Г.', weekType: 'even' },
+        { day: 1, slot: 4, name: 'Игровой практикум (факультатив)', room: '315', teacher: 'Косенкова Е.В.', weekType: 'odd' },
+        // Вторник
+        { day: 2, slot: 0, name: 'Элективные дисциплины по физической культуре и спорту', room: 'С/З', teacher: 'Евлаш Г.С.', weekType: 'both' },
+        { day: 2, slot: 1, name: 'Священное Писание Ветхого Завета', room: '315', teacher: 'Кашкин А.С.', weekType: 'both' },
+        { day: 2, slot: 2, name: 'Священное Писание Нового Завета', room: '315', teacher: 'Стародубцев О.В.', weekType: 'both' },
+        // Среда
+        { day: 3, slot: 0, name: 'Элективные дисциплины по физической культуре и спорту', room: 'С/З', teacher: 'Евлаш Г.С.', weekType: 'both' },
+        { day: 3, slot: 1, name: 'Православная антропология', room: '400', teacher: 'диак. Анатолий Гольдман', weekType: 'both' },
+        { day: 3, slot: 2, name: 'Педагогическая психология', room: '415', teacher: 'Алексеева Л.Н.', weekType: 'both' },
+        { day: 3, slot: 3, name: 'Психология развития и возрастная психология', room: '415', teacher: 'Колосова И.В.', weekType: 'both' },
+        { day: 3, slot: 4, name: 'Патрология', room: '315', teacher: 'Зоитакис А.Г.', weekType: 'both' },
+        // Четверг
+        { day: 4, slot: 0, name: 'Литургика', room: '400', teacher: 'Осипов А.М.', weekType: 'both' },
+        { day: 4, slot: 1, name: 'Церковнославянский язык (лекция)', room: '400', teacher: 'Шалыгина Н.В.', weekType: 'even' },
+        { day: 4, slot: 1, name: 'Церковнославянский язык (практика, 2 гр)', room: '414', teacher: 'Осипов А.М.', weekType: 'odd' },
+        { day: 4, slot: 1, name: 'Церковнославянский язык (практика, 1 гр)', room: '414', teacher: 'Шалыгина Н.В.', weekType: 'odd' },
+        { day: 4, slot: 2, name: 'Академическое письмо', room: '415', teacher: 'Шалыгина Н.В.', weekType: 'both' },
+        { day: 4, slot: 3, name: 'Анатомия и физиология ЦНС и сенсорных систем', room: '414', teacher: 'Молчанов А.Ю.', weekType: 'both' },
+        { day: 4, slot: 4, name: 'Психофизиология', room: '414', teacher: 'Молчанов А.Ю.', weekType: 'both' },
+        // Пятница
+        { day: 5, slot: 0, name: 'Психология развития и возрастная психология', room: '414', teacher: 'Колосова И.В.', weekType: 'both', dateStart: '05.11' },
+        { day: 5, slot: 1, name: 'Священное Писание Нового Завета', room: '315', teacher: 'Козарёзова О.О.', weekType: 'even' },
+        { day: 5, slot: 1, name: 'Священное Писание Ветхого Завета', room: '315', teacher: 'Козарёзова О.О.', weekType: 'odd' },
+        { day: 5, slot: 2, name: 'Экспериментальная психология', room: '400', teacher: 'Гурова Е.И.', weekType: 'even' },
+        { day: 5, slot: 2, name: 'Экспериментальная психология', room: '402', teacher: 'Гурова Е.И.', weekType: 'odd' },
+        { day: 5, slot: 3, name: 'Учебно-ознакомительная практика', room: '415', teacher: 'Гурова Е.И.', weekType: 'both' },
+        { day: 5, slot: 4, name: 'Общая психология (психология личности)', room: '415', teacher: 'Борискина А.А.', weekType: 'both' },
+        // Суббота
+        { day: 6, slot: 2, name: 'История Русской Православной Церкви', room: '315', teacher: 'прот. Владислав Цыпин', weekType: 'both' },
+    ];
+
+    // Праздничные даты (в формате ДД.ММ)
+    const HOLIDAYS = [
+        { date: '01.01', description: '🎄 Новый год' },
+        { date: '07.01', description: '🎄 Рождество Христово' },
+        { date: '23.02', description: '🇷🇺 День защитника Отечества' },
+        { date: '08.03', description: '🌷 Международный женский день' },
+        { date: '01.05', description: '🌸 Праздник Весны и Труда' },
+        { date: '09.05', description: '🎖️ День Победы' },
+        { date: '12.06', description: '🇷🇺 День России' },
+        { date: '04.11', description: '🇷🇺 День народного единства' },
+        { date: '01.09', description: '☦ Богослужение' },
+		{ date: '31.08', description: 'Не учимся' },
+    ];
+
+    const DAY_NAMES = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+    const NUMBER_OF_DAYS = 7;
+    const START_WEEK_REFERENCE = new Date(2026, 7, 31); // 31 августа 2026 – начало отсчёта чётности недель
+
+    // ---------- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ----------
+    const state = {
+        currentWeek: getDefaultWeek(),
+        filterToday: false,
+        theme: 'light'
+    };
+
+    // ---------- КЭШ DOM ----------
+    const dom = {
+        themeToggle: document.getElementById('themeToggle'),
+        currentLessonBlock: document.getElementById('currentLessonBlock'),
+        currentLessonContent: document.getElementById('currentLessonContent'),
+        nextLessonContent: document.getElementById('nextLessonContent'),
+        scheduleContainer: document.getElementById('scheduleContainer'),
+        weekButtons: document.querySelectorAll('.week-btn'),
+        filterBtn: document.getElementById('todayFilterBtn')
+    };
+
+    // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------
+
+    /** Определяет тип текущей недели ('even' или 'odd') на основе даты */
+    function getDefaultWeek() {
+        const now = new Date();
+        const diff = Math.floor((now - START_WEEK_REFERENCE) / (7 * 24 * 60 * 60 * 1000));
+        return (diff % 2 === 0) ? 'even' : 'odd';
+    }
+
+    /** Возвращает день недели (1 = ПН, …, 7 = ВС) для текущей даты */
+    function getTodayIndex() {
+        const day = new Date().getDay();
+        return day === 0 ? 7 : day;
+    }
+
+    /** Форматирует дату в строку "день месяц" (например, "31 августа") */
+    function formatDate(date) {
+        return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+    }
+
+    /** Возвращает объект Date для заданного дня недели (1..7) относительно сегодня */
+    function getDateByDayIndex(dayIndex) {
+		const now = new Date();
+		const todayIdx = getTodayIndex(); // 1 = ПН, ..., 7 = ВС
+		// Вычисляем дату понедельника текущей недели
+		const monday = new Date(now);
+		monday.setDate(now.getDate() - (todayIdx - 1));
+		// Прибавляем нужное количество дней (dayIndex - 1)
+		const target = new Date(monday);
+		target.setDate(monday.getDate() + (dayIndex - 1));
+		return target;
+	}
+
+    /** Проверяет, является ли дата праздничной, и возвращает описание или null */
+    function getHolidayDescription(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const key = `${day}.${month}`;
+        const holiday = HOLIDAYS.find(h => h.date === key);
+        return holiday ? holiday.description : null;
+    }
+
+    /** Проверяет доступность занятия по дате начала (если задано) */
+    function isLessonAvailable(lesson) {
+        if (!lesson.dateStart) return true;
+        const now = new Date();
+        const [day, month] = lesson.dateStart.split('.').map(Number);
+        const startDate = new Date(now.getFullYear(), month - 1, day);
+        startDate.setDate(startDate.getDate() - 5);  // занятие показывается за 5 дней до старта
+        return now >= startDate;
+    }
+
+    /** Возвращает массив занятий для указанного дня, недели и даты (с учётом праздников) */
+    function getLessonsForDay(dayIndex, weekType, date) {
+        if (getHolidayDescription(date)) return [];
+
+        return LESSONS_DATA.filter(lesson => {
+            if (!isLessonAvailable(lesson)) return false;
+            if (lesson.weekType === 'both') return true;
+            return lesson.weekType === weekType;
+        }).filter(lesson => lesson.day === dayIndex);
+    }
+
+    /** Проверяет, попадает ли текущее время в указанный слот (включая границы) */
+    function isTimeInSlot(timeStr, slot) {
+        return timeStr >= slot.start && timeStr <= slot.end;
+    }
+
+    /** Вычисляет оставшееся время до указанной даты в формате ЧЧ:ММ:СС или ММ:СС */
+    function getTimeRemaining(targetDate) {
+        const diff = targetDate.getTime() - Date.now();
+        if (diff <= 0) return '🔴 Идёт сейчас!';
+        const seconds = Math.floor(diff / 1000);
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        const pad = n => String(n).padStart(2, '0');
+        if (hours > 0) {
+            return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+        } else {
+            return `${pad(minutes)}:${pad(secs)}`;
+        }
+    }
+
+    // ---------- ФУНКЦИИ ОБНОВЛЕНИЯ БЛОКОВ ----------
+
+    /** Обновляет блок «Текущая пара» */
+    function updateCurrentLesson() {
+        const now = new Date();
+        const currentTimeStr = now.toTimeString().slice(0, 5);
+        const todayIdx = getTodayIndex();
+        const date = getDateByDayIndex(todayIdx);
+
+        if (getHolidayDescription(date)) {
+            dom.currentLessonBlock.style.display = 'none';
+            return;
+        }
+
+        const lessons = getLessonsForDay(todayIdx, state.currentWeek, date);
+        const currentLessons = lessons.filter(lesson => {
+            const slot = TIME_SLOTS[lesson.slot];
+            return slot && isTimeInSlot(currentTimeStr, slot);
+        });
+
+        if (currentLessons.length === 0) {
+            dom.currentLessonBlock.style.display = 'none';
+            return;
+        }
+
+        dom.currentLessonBlock.style.display = 'block';
+        let html = '<div class="current-lesson-label">🔴 Идёт сейчас</div>';
+        currentLessons.forEach(lesson => {
+            const slot = TIME_SLOTS[lesson.slot];
+            const end = new Date();
+            const [endHour, endMin] = slot.end.split(':').map(Number);
+            end.setHours(endHour, endMin, 0, 0);
+            const timeLeft = (end.getTime() - Date.now() > 0)
+                ? `Осталось ${Math.floor((end.getTime() - Date.now()) / 60000)} мин ${Math.floor(((end.getTime() - Date.now()) % 60000) / 1000)} сек`
+                : 'Заканчивается';
+
+            html += `
+                <div class="current-lesson-item">
+                    <span class="lesson-name">${lesson.name}</span>
+                    <span class="lesson-meta">🏛️ ${lesson.room} | 👨‍🏫 ${lesson.teacher}</span>
+                    <span class="time-left">⏳ ${timeLeft}</span>
+                </div>
+            `;
+        });
+        dom.currentLessonContent.innerHTML = html;
+    }
+
+    /** Обновляет блок «Следующая пара» */
+    function updateNextLesson() {
+        const container = dom.nextLessonContent;
+        const now = new Date();
+        const currentTimeStr = now.toTimeString().slice(0, 5);
+        const todayIdx = getTodayIndex();
+        const todayDate = getDateByDayIndex(todayIdx);
+
+        // Проверка на праздник сегодня
+        const holidayToday = getHolidayDescription(todayDate);
+        if (holidayToday) {
+            container.innerHTML = `
+                <div class="main-info">
+                    <span class="lesson-name" style="font-size: 1.1rem;">🙂 ${holidayToday}</span>
+                </div>
+                <div class="no-lessons" style="margin-top: 6px; font-style: normal;">Занятий нет</div>
+            `;
+            return;
+        }
+
+        // Все занятия сегодня
+        let todayLessons = getLessonsForDay(todayIdx, state.currentWeek, todayDate);
+        todayLessons.sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
+
+        // Ищем ближайшее занятие, которое ещё не началось
+        let nextLesson = null;
+        for (const lesson of todayLessons) {
+            const slot = TIME_SLOTS[lesson.slot];
+            if (slot && slot.start >= currentTimeStr) {
+                nextLesson = lesson;
+                break;
+            }
+        }
+
+        let targetDay = todayIdx;
+        let targetLesson = nextLesson;
+
+        // Если сегодня больше нет занятий – ищем в следующие дни
+        if (!targetLesson) {
+            for (let offset = 1; offset <= NUMBER_OF_DAYS; offset++) {
+                let checkDay = todayIdx + offset;
+                if (checkDay > NUMBER_OF_DAYS) checkDay -= NUMBER_OF_DAYS;
+                const checkDate = getDateByDayIndex(checkDay);
+                const dayLessons = getLessonsForDay(checkDay, state.currentWeek, checkDate);
+                if (dayLessons.length > 0) {
+                    const sorted = [...dayLessons].sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
+                    targetLesson = sorted[0];
+                    targetDay = checkDay;
+                    break;
+                }
+            }
+        }
+
+        if (!targetLesson) {
+            container.innerHTML = `<div class="no-lessons">🎉 На этой неделе занятий нет</div>`;
+            return;
+        }
+
+        const slot = TIME_SLOTS[targetLesson.slot];
+        if (!slot) {
+            container.innerHTML = `<div class="no-lessons">⚠️ Ошибка: время не указано</div>`;
+            return;
+        }
+
+        // Вычисляем дату и время начала пары
+        const [startHour, startMinute] = slot.start.split(':').map(Number);
+        let startDate = new Date(now);
+        startDate.setHours(startHour, startMinute, 0, 0);
+        if (targetDay !== todayIdx) {
+            let diffDays = targetDay - todayIdx;
+            if (diffDays < 0) diffDays += NUMBER_OF_DAYS;
+            startDate.setDate(startDate.getDate() + diffDays);
+        }
+
+        const countdownText = getTimeRemaining(startDate);
+        const isUrgent = (startDate.getTime() - now.getTime() <= 600000 && startDate.getTime() - now.getTime() > 0);
+
+        let dayPrefix = (targetDay !== todayIdx) ? ` (${DAY_NAMES[targetDay-1]})` : '';
+
+        container.innerHTML = `
+            <div class="main-info">
+                <span class="lesson-name">${targetLesson.name}</span>
+                <span class="lesson-meta">
+                    <span>🏛️ ${targetLesson.room}</span>
+                    <span>👨‍🏫 ${targetLesson.teacher}</span>
+                    <span>⏰ ${slot.start}${dayPrefix}</span>
+                </span>
+            </div>
+            <div class="countdown ${isUrgent ? 'urgent' : ''}">${countdownText}</div>
+        `;
+    }
+
+    // ---------- ОСНОВНАЯ ОТРИСОВКА РАСПИСАНИЯ ----------
+
+    /** Рендерит полное расписание на основе текущей недели и фильтра */
+    function renderSchedule() {
+        const container = dom.scheduleContainer;
+        const now = new Date();
+        const currentTimeStr = now.toTimeString().slice(0, 5);
+        const todayIdx = getTodayIndex();
+
+        // Группируем занятия по дням и слотам
+        const grouped = {};
+        for (let d = 1; d <= NUMBER_OF_DAYS; d++) {
+            grouped[d] = new Array(TIME_SLOTS.length).fill(null);
+        }
+
+        const filtered = LESSONS_DATA.filter(lesson => {
+            if (!isLessonAvailable(lesson)) return false;
+            if (lesson.weekType === 'both') return true;
+            return lesson.weekType === state.currentWeek;
+        });
+
+        filtered.forEach(lesson => {
+            const dayDate = getDateByDayIndex(lesson.day);
+            if (getHolidayDescription(dayDate)) return;
+            if (grouped[lesson.day] && lesson.slot !== undefined) {
+                if (!Array.isArray(grouped[lesson.day][lesson.slot])) {
+                    grouped[lesson.day][lesson.slot] = [];
+                }
+                grouped[lesson.day][lesson.slot].push(lesson);
+            }
+        });
+
+        // Определяем, какие дни показывать
+        const daysToRender = state.filterToday ? [todayIdx] : [1, 2, 3, 4, 5, 6, 7];
+
+        let html = '';
+        for (const d of daysToRender) {
+            const slots = grouped[d];
+            const dayName = DAY_NAMES[d-1];
+            const isToday = (d === todayIdx);
+            const dayClass = isToday ? 'day-card today' : 'day-card';
+            const dayDate = getDateByDayIndex(d);
+            const holidayDesc = getHolidayDescription(dayDate);
+            const dateStr = formatDate(dayDate);
+
+            html += `<div class="${dayClass}">`;
+            html += `<div class="day-header"><span>${dayName}, ${dateStr}</span>`;
+            if (isToday) {
+                html += `<span class="date-badge">Сегодня</span>`;
+            }
+            html += `</div><div class="lesson-list">`;
+
+            if (holidayDesc) {
+                html += `
+                    <div class="holiday-message">
+                        <span class="holiday-icon">🙂</span>
+                        <span class="holiday-text">${holidayDesc}</span>
+                    </div>
+                `;
+            } else {
+                let hasLessons = false;
+                for (let slotIdx = 0; slotIdx < TIME_SLOTS.length; slotIdx++) {
+                    if (slots[slotIdx] && slots[slotIdx].length > 0) {
+                        hasLessons = true;
+                        break;
+                    }
+                }
+
+                if (!hasLessons && state.filterToday && isToday) {
+                    html += `
+                        <div class="no-lessons" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                            🎉 Сегодня занятий нет
+                        </div>
+                    `;
+                } else {
+                    for (let slotIdx = 0; slotIdx < TIME_SLOTS.length; slotIdx++) {
+                        const slot = TIME_SLOTS[slotIdx];
+                        const lessonsInSlot = slots[slotIdx];
+
+                        if (lessonsInSlot && lessonsInSlot.length > 0) {
+                            lessonsInSlot.forEach(lesson => {
+                                const timeDisplay = `${slot.start} – ${slot.end}`;
+                                const isCurrent = isToday && isTimeInSlot(currentTimeStr, slot);
+                                const currentClass = isCurrent ? 'lesson-item current' : 'lesson-item';
+
+                                html += `
+                                    <div class="${currentClass}">
+                                        <div class="lesson-time">${timeDisplay}</div>
+                                        <div class="lesson-info">
+                                            <div class="lesson-name">${lesson.name}</div>
+                                            <div class="lesson-meta">
+                                                <span><span class="icon">🏛️</span> ${lesson.room}</span>
+                                                <span><span class="icon">👨‍🏫</span> ${lesson.teacher}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        } else {
+                            const emptyText = (slot.start === '10:00') ? '😴 Можно выспаться' : 'Нет пары';
+                            html += `
+                                <div class="lesson-item empty-slot">
+                                    <div class="lesson-time">${slot.start} – ${slot.end}</div>
+                                    <div class="lesson-info">
+                                        <div class="lesson-name" style="color: var(--text-empty); font-style: italic;">${emptyText}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            }
+            html += `</div></div>`;
+        }
+        container.innerHTML = html;
+        updateNextLesson();
+    }
+
+    // ---------- ОБНОВЛЕНИЕ ИНТЕРФЕЙСА (кнопки, тема) ----------
+
+    /** Обновляет активное состояние кнопок выбора недели */
+    function updateWeekButtons() {
+        dom.weekButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.week === state.currentWeek);
+        });
+    }
+
+    /** Обновляет кнопку фильтра «Только сегодня» */
+    function updateFilterButton() {
+        const btn = dom.filterBtn;
+        if (state.filterToday) {
+            btn.textContent = '📌 Только сегодня';
+            btn.classList.add('active');
+        } else {
+            btn.textContent = '📅 Все дни';
+            btn.classList.remove('active');
+        }
+    }
+
+    /** Применяет сохранённую тему */
+    function applyTheme(theme) {
+        document.body.classList.toggle('dark-theme', theme === 'dark');
+        dom.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+        state.theme = theme;
+    }
+
+    /** Переключает тему и сохраняет в localStorage */
+    function toggleTheme() {
+        const newTheme = state.theme === 'light' ? 'dark' : 'light';
+        applyTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+    }
+
+    // ---------- ОБРАБОТЧИКИ СОБЫТИЙ ----------
+
+    /** Инициализация обработчиков */
+    function initEventHandlers() {
+        // Кнопки выбора недели
+        dom.weekButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                state.currentWeek = this.dataset.week;                
+                updateWeekButtons();
+                renderSchedule();
+            });
+        });
+
+        // Кнопка фильтра «Сегодня»
+        dom.filterBtn.addEventListener('click', function() {
+            state.filterToday = !state.filterToday;
+            localStorage.setItem('filterToday', state.filterToday ? 'true' : 'false');
+            updateFilterButton();
+            renderSchedule();
+        });
+
+        // Переключатель темы
+        dom.themeToggle.addEventListener('click', toggleTheme);
+    }
+
+    // ---------- ЗАПУСК ПРИЛОЖЕНИЯ ----------
+
+    function init() {
+        // Восстанавливаем состояние из localStorage
+        
+        const savedFilter = localStorage.getItem('filterToday');
+        if (savedFilter === 'true') {
+            state.filterToday = true;
+        }
+        const savedTheme = localStorage.getItem('theme');
+        applyTheme(savedTheme || 'light');
+
+        // Обновляем вид кнопок
+        updateWeekButtons();
+        updateFilterButton();
+
+        // Первый рендер
+        renderSchedule();
+        updateCurrentLesson();
+
+        // Автообновление каждую секунду (таймеры для текущей и следующей пары)
+        setInterval(() => {
+            updateCurrentLesson();
+            updateNextLesson();
+        }, 1000);
+
+        // Перерисовка расписания каждые 30 секунд (на случай смены дня/времени)
+        setInterval(() => {
+            renderSchedule();
+        }, 30000);
+
+        // Навешиваем обработчики событий
+        initEventHandlers();
+    }
+
+    // Запускаем приложение после загрузки DOM
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+})();
+</script>
+</body>
+</html>
