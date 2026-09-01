@@ -509,72 +509,10 @@
 (function() {
     'use strict';
 
-    // ---------- КОНФИГУРАЦИЯ ----------
-    // Временные слоты пар
-    const TIME_SLOTS = [
-        { start: '10:00', end: '11:20' },
-        { start: '11:30', end: '12:50' },
-        { start: '13:00', end: '14:20' },
-        { start: '15:00', end: '16:20' },
-        { start: '16:30', end: '17:50' }
-    ];
-
-    // Основные данные расписания dateStart - дата начала
-    const LESSONS_DATA = [
-        // Понедельник
-        { day: 1, slot: 0, name: 'Математические методы в психологии', room: '414', teacher: 'Гурова Е.И.', weekType: 'both' },
-        { day: 1, slot: 1, name: 'Социальная психология', room: '317', teacher: 'Борискина А.А.', weekType: 'both' },
-        { day: 1, slot: 2, name: 'Социальная психология', room: '414', teacher: 'Борискина А.А.', weekType: 'both' },
-        { day: 1, slot: 3, name: 'Иностранный язык', room: '317', teacher: 'Татаринова О.В.', weekType: 'both' },
-        { day: 1, slot: 4, name: 'Патрология', room: '315', teacher: 'Зоитакис А.Г.', weekType: 'even' },
-        { day: 1, slot: 4, name: 'Игровой практикум (факультатив)', room: '315', teacher: 'Косенкова Е.В.', weekType: 'odd' },
-        // Вторник
-        { day: 2, slot: 0, name: 'Элективные дисциплины по физической культуре и спорту', room: 'С/З', teacher: 'Евлаш Г.С.', weekType: 'both' },
-        { day: 2, slot: 1, name: 'Священное Писание Ветхого Завета', room: '315', teacher: 'Кашкин А.С.', weekType: 'both' },
-        { day: 2, slot: 2, name: 'Священное Писание Нового Завета', room: '315', teacher: 'Стародубцев О.В.', weekType: 'both' },
-        // Среда
-        { day: 3, slot: 0, name: 'Элективные дисциплины по физической культуре и спорту', room: 'С/З', teacher: 'Евлаш Г.С.', weekType: 'both' },
-        { day: 3, slot: 1, name: 'Православная антропология', room: '400', teacher: 'диак. Анатолий Гольдман', weekType: 'both' },
-        { day: 3, slot: 2, name: 'Педагогическая психология', room: '415', teacher: 'Алексеева Л.Н.', weekType: 'both' },
-        { day: 3, slot: 3, name: 'Психология развития и возрастная психология', room: '415', teacher: 'Колосова И.В.', weekType: 'both' },
-        { day: 3, slot: 4, name: 'Патрология', room: '315', teacher: 'Зоитакис А.Г.', weekType: 'both' },
-        // Четверг
-        { day: 4, slot: 0, name: 'Литургика', room: '400', teacher: 'Осипов А.М.', weekType: 'both' },
-        { day: 4, slot: 1, name: 'Церковнославянский язык (лекция)', room: '400', teacher: 'Шалыгина Н.В.', weekType: 'even' },
-        { day: 4, slot: 1, name: 'Церковнославянский язык (практика, 2 гр)', room: '414', teacher: 'Осипов А.М.', weekType: 'odd' },
-        { day: 4, slot: 1, name: 'Церковнославянский язык (практика, 1 гр)', room: '414', teacher: 'Шалыгина Н.В.', weekType: 'odd' },
-        { day: 4, slot: 2, name: 'Академическое письмо', room: '415', teacher: 'Шалыгина Н.В.', weekType: 'both' },
-        { day: 4, slot: 3, name: 'Анатомия и физиология ЦНС и сенсорных систем', room: '414', teacher: 'Молчанов А.Ю.', weekType: 'both' },
-        { day: 4, slot: 4, name: 'Психофизиология', room: '414', teacher: 'Молчанов А.Ю.', weekType: 'both' },
-        // Пятница
-        { day: 5, slot: 0, name: 'Психология развития и возрастная психология', room: '414', teacher: 'Колосова И.В.', weekType: 'both', dateStart: '05.11' },
-        { day: 5, slot: 1, name: 'Священное Писание Нового Завета', room: '315', teacher: 'Козарёзова О.О.', weekType: 'even' },
-        { day: 5, slot: 1, name: 'Священное Писание Ветхого Завета', room: '315', teacher: 'Козарёзова О.О.', weekType: 'odd' },
-        { day: 5, slot: 2, name: 'Экспериментальная психология', room: '400', teacher: 'Гурова Е.И.', weekType: 'even' },
-        { day: 5, slot: 2, name: 'Экспериментальная психология', room: '402', teacher: 'Гурова Е.И.', weekType: 'odd' },
-        { day: 5, slot: 3, name: 'Учебно-ознакомительная практика', room: '415', teacher: 'Гурова Е.И.', weekType: 'both' },
-        { day: 5, slot: 4, name: 'Общая психология (психология личности)', room: '415', teacher: 'Борискина А.А.', weekType: 'both' },
-        // Суббота
-        { day: 6, slot: 2, name: 'История Русской Православной Церкви', room: '315', teacher: 'прот. Владислав Цыпин', weekType: 'both' },
-    ];
-
-    // Праздничные даты (в формате ДД.ММ)
-    const HOLIDAYS = [
-        { date: '01.01', description: '🎄 Новый год' },
-        { date: '07.01', description: '🎄 Рождество Христово' },
-        { date: '23.02', description: '🇷🇺 День защитника Отечества' },
-        { date: '08.03', description: '🌷 Международный женский день' },
-        { date: '01.05', description: '🌸 Праздник Весны и Труда' },
-        { date: '09.05', description: '🎖️ День Победы' },
-        { date: '12.06', description: '🇷🇺 День России' },
-        { date: '04.11', description: '🇷🇺 День народного единства' },
-        { date: '01.09', description: '☦ Богослужение' },
-		{ date: '31.08', description: 'Не учимся' },
-    ];
-
+    
+	let TIME_SLOTS, LESSONS_DATA, HOLIDAYS, START_WEEK_REFERENCE;
     const DAY_NAMES = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
     const NUMBER_OF_DAYS = 7;
-    const START_WEEK_REFERENCE = new Date(2026, 7, 31); // 31 августа 2026 – начало отсчёта чётности недель
 
     // ---------- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ----------
     const state = {
@@ -796,6 +734,37 @@
         }
     }
 
+	function loadData() {
+		// Добавляем случайный параметр, чтобы избежать кэширования
+		const url = 'data.json?t=' + Date.now();
+		return fetch(url)
+			.then(response => {
+				if (!response.ok) throw new Error('Не удалось загрузить data.json');
+				return response.json();
+			})
+			.catch(error => {
+				console.warn('Ошибка загрузки данных:', error);
+				// Возвращаем встроенные данные как fallback
+				return getFallbackData();
+			});
+	}
+
+	function getFallbackData() {
+		// Здесь можно продублировать данные из JSON, но лучше просто показать сообщение и использовать пустые массивы
+		// Но для надёжности можно вернуть минимальный набор:
+		return {
+			timeSlots: [
+				{ start: '10:00', end: '11:20' },
+				{ start: '11:30', end: '12:50' },
+				{ start: '13:00', end: '14:20' },
+				{ start: '15:00', end: '16:20' },
+				{ start: '16:30', end: '17:50' }
+			],
+			holidays: [],
+			lessons: [],
+			startWeekReference: '2026-08-31'
+		};
+	}
     // ---------- ФУНКЦИИ ОБНОВЛЕНИЯ БЛОКОВ ----------
 
     /** Обновляет блок «Текущая пара» */
@@ -1106,12 +1075,18 @@
 
     // ---------- ЗАПУСК ПРИЛОЖЕНИЯ ----------
 
-    function init() {
+    async function init() {
 		// Запрос разрешения на уведомления (если браузер поддерживает)
 		if ('Notification' in window) {
 			requestNotificationPermission();
 		}
-
+		const data = await loadData();
+		TIME_SLOTS = data.timeSlots;
+		HOLIDAYS = data.holidays;
+		LESSONS_DATA = data.lessons;
+		START_WEEK_REFERENCE = new Date(data.startWeekReference);
+		// 👇 Обновляем текущую неделю
+		state.currentWeek = getDefaultWeek();	
         // Восстанавливаем состояние из localStorage
         
         const savedFilter = localStorage.getItem('filterToday');
