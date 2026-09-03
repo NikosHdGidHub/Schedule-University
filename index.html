@@ -4,1713 +4,724 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Расписание ВУЗ</title>
-    <!-- Подключаем Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-       /* ========== ОСНОВНЫЕ ПЕРЕМЕННЫЕ ========== */
-		:root {
-			/* Цвета фона */
-			--bg-page: #f4f7fb;
-			--bg-card: #ffffff;
-			--bg-header: #f8fafc;
-			--bg-today: #f8faff;
-			--bg-current-lesson: #ecfdf5;
-			--bg-next-lesson: #ffffff;
-			--bg-empty-slot: #f8fafc;
-			--bg-holiday: #fef9c3;
-			--bg-badge: #e2e8f0;
-			--bg-badge-today: #bfdbfe;
-			--bg-btn: #ffffff;
-			--bg-btn-hover: #e2e8f0;
-			--bg-btn-active: #1e293b;
-			--bg-countdown: #eff6ff;
-			--bg-countdown-urgent: #fee2e2;
-			--bg-current-time: #d1fae5;
-			--bg-modal: rgba(0,0,0,0.4);
-			--bg-modal-content: #ffffff;
-			
-			/* Цвета текста */
-			--text-primary: #1e293b;
-			--text-secondary: #475569;
-			--text-muted: #94a3b8;
-			--text-heading: #0f172a;
-			--text-badge: #475569;
-			--text-badge-today: #1e40af;
-			--text-btn: #334155;
-			--text-btn-active: #ffffff;
-			--text-countdown: #3b82f6;
-			--text-countdown-urgent: #dc2626;
-			--text-current-label: #065f46;
-			--text-current-time: #059669;
-			--text-holiday: #1e293b;
-			--text-empty: #94a3b8;
-			
-			/* Цвета границ */
-			--border-card: #94a3b8;
-			--border-today: #3b82f6;
-			--border-light: #e9edf2;
-			--border-current: #10b981;
-			--border-current-item: #d1fae5;
-			--border-lesson: #f1f5f9;
-			--border-btn: #cbd5e1;
-			--border-btn-active: #1e293b;
-			--border-modal: #cbd5e1;
-			
-			/* Тени */
-			--shadow-card: 0 4px 12px rgba(0,0,0,0.05);
-			--shadow-today: 0 4px 16px rgba(59, 130, 246, 0.15);
-			--shadow-next: 0 8px 24px rgba(0,0,0,0.08);
-			--shadow-current: 0 8px 24px rgba(0,0,0,0.08);
-			--shadow-modal: 0 20px 60px rgba(0,0,0,0.3);
-		}
-
-		/* ========== ТЁМНАЯ ТЕМА ========== */
-		body.dark-theme {
-			--bg-page: #0f172a;
-			--bg-card: #1e293b;
-			--bg-header: #2d3748;
-			--bg-today: #1e2a3a;
-			--bg-current-lesson: #1a2a2f;
-			--bg-next-lesson: #1e293b;
-			--bg-empty-slot: #2d3748;
-			--bg-holiday: #422b2b;
-			--bg-badge: #334155;
-			--bg-badge-today: #1e3a5f;
-			--bg-btn: #1e293b;
-			--bg-btn-hover: #334155;
-			--bg-btn-active: #3b82f6;
-			--bg-countdown: #1e3a5f;
-			--bg-countdown-urgent: #4c1d1d;
-			--bg-current-time: #1a3a34;
-			--bg-modal: rgba(0,0,0,0.7);
-			--bg-modal-content: #1e293b;
-			
-			--text-primary: #e2e8f0;
-			--text-secondary: #94a3b8;
-			--text-muted: #64748b;
-			--text-heading: #f1f5f9;
-			--text-badge: #cbd5e1;
-			--text-badge-today: #93c5fd;
-			--text-btn: #cbd5e1;
-			--text-btn-active: #ffffff;
-			--text-countdown: #60a5fa;
-			--text-countdown-urgent: #f87171;
-			--text-current-label: #6ee7b7;
-			--text-current-time: #6ee7b7;
-			--text-holiday: #fcd34d;
-			--text-empty: #64748b;
-			
-			--border-card: #475569;
-			--border-today: #60a5fa;
-			--border-light: #334155;
-			--border-current: #34d399;
-			--border-current-item: #1a3a34;
-			--border-lesson: #334155;
-			--border-btn: #475569;
-			--border-btn-active: #3b82f6;
-			--border-modal: #475569;
-			
-			--shadow-card: 0 4px 12px rgba(0,0,0,0.3);
-			--shadow-today: 0 4px 16px rgba(96, 165, 250, 0.25);
-			--shadow-next: 0 8px 24px rgba(0,0,0,0.4);
-			--shadow-current: 0 8px 24px rgba(0,0,0,0.4);
-			--shadow-modal: 0 20px 60px rgba(0,0,0,0.5);
-		}
-
-		/* ========== ОБЩИЕ СТИЛИ ========== */
-		* {
-			box-sizing: border-box;
-			margin: 0;
-			padding: 0;
-		}
-
-		body {
-			font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-			background: var(--bg-page);
-			padding: 16px;
-			max-width: 900px;
-			margin: 0 auto;
-			color: var(--text-primary);
-			transition: background 0.3s, color 0.3s;
-		}
-
-		h1 {
-			text-align: center;
-			font-weight: 600;
-			font-size: 1.8rem;
-			margin-bottom: 16px;
-			color: var(--text-heading);
-			letter-spacing: -0.5px;
-			transition: color 0.3s;
-		}
-
-		/* ========== ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ ========== */
-		.header-container {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 16px;
-		}
-		.header-container h1 {
-			margin: 0;
-			flex: 1;
-			text-align: center;
-		}
-		.theme-btn {
-			background: var(--bg-card);
-			border: 2px solid var(--border-btn);
-			border-radius: 40px;
-			padding: 8px 16px;
-			font-size: 1.2rem;
-			cursor: pointer;
-			transition: background 0.2s, border-color 0.2s, color 0.2s;
-			color: var(--text-btn);
-		}
-		.theme-btn:hover {
-			background: var(--bg-btn-hover);
-		}
-
-		/* ========== ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК ========== */
-		.tab-switcher {
-			display: flex;
-			justify-content: center;
-			gap: 12px;
-			margin-bottom: 16px;
-		}
-		.tab-btn {
-			padding: 10px 28px;
-			border: 2px solid var(--border-btn);
-			background: var(--bg-card);
-			border-radius: 40px;
-			font-weight: 600;
-			font-size: 1rem;
-			cursor: pointer;
-			transition: 0.2s;
-			color: var(--text-btn);
-		}
-		.tab-btn:hover {
-			background: var(--bg-btn-hover);
-		}
-		.tab-btn.active {
-			background: var(--bg-btn-active);
-			border-color: var(--border-btn-active);
-			color: var(--text-btn-active);
-		}
-		.tab-btn.active:hover {
-			background: var(--bg-btn-active);
-		}
-
-		/* ========== ПЕРЕКЛЮЧАТЕЛЬ НЕДЕЛЬ ========== */
-		.week-switcher {
-			display: flex;
-			justify-content: center;
-			gap: 12px;
-			margin-bottom: 24px;
-		}
-		.today-filter {
-			margin-left: 8px;
-		}
-		.tab-btn.active.today-filter {
-			background: var(--bg-btn-active);
-			border-color: var(--border-btn-active);
-			color: var(--text-btn-active);
-		}
-
-		/* ========== БЛОК "ТЕКУЩАЯ ПАРА" ========== */
-		.current-lesson-block {
-			background: var(--bg-current-lesson);
-			border-radius: 20px;
-			box-shadow: var(--shadow-current);
-			padding: 20px 24px;
-			margin-bottom: 16px;
-			border-left: 6px solid var(--border-current);
-			transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
-		}
-		.current-lesson-block .current-lesson-label {
-			font-weight: 700;
-			color: var(--text-current-label);
-			font-size: 1.1rem;
-			margin-bottom: 10px;
-			transition: color 0.3s;
-		}
-		.current-lesson-item {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: baseline;
-			gap: 8px 20px;
-			padding: 8px 0;
-			border-bottom: 1px solid var(--border-current-item);
-			transition: border-color 0.3s;
-		}
-		.current-lesson-item:last-child {
-			border-bottom: none;
-		}
-		.current-lesson-item .lesson-name {
-			font-weight: 700;
-			font-size: 1.1rem;
-			color: var(--text-heading);
-			transition: color 0.3s;
-		}
-		.current-lesson-item .lesson-meta {
-			font-size: 0.95rem;
-			color: var(--text-secondary);
-			transition: color 0.3s;
-		}
-		.current-lesson-item .time-left {
-			font-weight: 600;
-			color: var(--text-current-time);
-			background: var(--bg-current-time);
-			padding: 2px 12px;
-			border-radius: 30px;
-			transition: background 0.3s, color 0.3s;
-		}
-
-		/* ========== БЛОК "СЛЕДУЮЩАЯ ПАРА" ========== */
-		.next-lesson-block {
-			background: var(--bg-next-lesson);
-			border-radius: 20px;
-			box-shadow: var(--shadow-next);
-			padding: 20px 24px;
-			margin-bottom: 28px;
-			border-left: 6px solid var(--border-today);
-			transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
-		}
-		.next-lesson-block .label {
-			font-size: 0.85rem;
-			font-weight: 500;
-			color: var(--text-secondary);
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
-			margin-bottom: 6px;
-			transition: color 0.3s;
-		}
-		.next-lesson-block .main-info {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: baseline;
-			gap: 12px 20px;
-		}
-		.next-lesson-block .lesson-name {
-			font-size: 1.3rem;
-			font-weight: 700;
-			color: var(--text-heading);
-			transition: color 0.3s;
-		}
-		.next-lesson-block .lesson-meta {
-			font-size: 0.95rem;
-			color: var(--text-secondary);
-			display: flex;
-			flex-wrap: wrap;
-			gap: 16px;
-			transition: color 0.3s;
-		}
-		.next-lesson-block .lesson-meta span {
-			display: inline-flex;
-			align-items: center;
-			gap: 4px;
-		}
-		.next-lesson-block .countdown {
-			margin-top: 10px;
-			font-size: 1.1rem;
-			font-weight: 600;
-			color: var(--text-countdown);
-			background: var(--bg-countdown);
-			padding: 8px 16px;
-			border-radius: 40px;
-			display: inline-block;
-			transition: background 0.3s, color 0.3s;
-		}
-		.next-lesson-block .countdown.urgent {
-			color: var(--text-countdown-urgent);
-			background: var(--bg-countdown-urgent);
-		}
-		.next-lesson-block .no-lessons {
-			font-size: 1.1rem;
-			color: var(--text-muted);
-			transition: color 0.3s;
-		}
-
-		/* ========== ПРАЗДНИКИ ========== */
-		.holiday-message {
-			padding: 30px 20px;
-			text-align: center;
-			font-size: 1.3rem;
-			color: var(--text-holiday);
-			background: var(--bg-holiday);
-			border-radius: 12px;
-			margin: 12px 20px;
-			transition: background 0.3s, color 0.3s;
-		}
-		.holiday-message .holiday-icon {
-			font-size: 2.5rem;
-			display: block;
-			margin-bottom: 8px;
-		}
-		.holiday-message .holiday-text {
-			font-weight: 600;
-		}
-
-		/* ========== СЕТКА ДНЕЙ ========== */
-		.schedule-grid {
-			display: flex;
-			flex-direction: column;
-			gap: 20px;
-		}
-		.day-card {
-			background: var(--bg-card);
-			border-radius: 20px;
-			box-shadow: var(--shadow-card);
-			overflow: hidden;
-			border-left: 6px solid var(--border-card);
-			transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
-		}
-		.day-card.today {
-			border-left-color: var(--border-today);
-			background: var(--bg-today);
-			box-shadow: var(--shadow-today);
-		}
-		.day-header {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			padding: 14px 20px;
-			background: var(--bg-header);
-			border-bottom: 1px solid var(--border-light);
-			font-weight: 600;
-			font-size: 1.1rem;
-			transition: background 0.3s, border-color 0.3s;
-		}
-		.day-header .date-badge {
-			background: var(--bg-badge);
-			padding: 4px 12px;
-			border-radius: 30px;
-			font-size: 0.8rem;
-			font-weight: 400;
-			color: var(--text-badge);
-			transition: background 0.3s, color 0.3s;
-		}
-		.day-card.today .day-header {
-			background: var(--bg-today);
-		}
-		.day-card.today .date-badge {
-			background: var(--bg-badge-today);
-			color: var(--text-badge-today);
-		}
-		.lesson-list {
-			padding: 8px 0;
-		}
-		.lesson-item {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-			padding: 12px 20px;
-			border-bottom: 1px solid var(--border-lesson);
-			transition: background 0.3s, border-color 0.3s;
-		}
-		.lesson-item:last-child {
-			border-bottom: none;
-		}
-		.lesson-item.current {
-			background: var(--bg-current-lesson);
-			border-left: 4px solid var(--border-current);
-		}
-		.lesson-item.empty-slot {
-			background: var(--bg-empty-slot);
-			opacity: 0.7;
-			border-left: 3px solid var(--border-card);
-		}
-		.lesson-item.empty-slot .lesson-name {
-			color: var(--text-empty);
-			font-style: italic;
-		}
-		.lesson-time {
-			font-weight: 500;
-			color: var(--text-primary);
-			min-width: 90px;
-			font-size: 0.95rem;
-			transition: color 0.3s;
-		}
-		.lesson-info {
-			flex: 1;
-		}
-		.lesson-name {
-			font-weight: 600;
-			font-size: 1rem;
-			color: var(--text-primary);
-			transition: color 0.3s;
-		}
-		.lesson-meta {
-			font-size: 0.85rem;
-			color: var(--text-secondary);
-			display: flex;
-			flex-wrap: wrap;
-			gap: 12px;
-			margin-top: 2px;
-			transition: color 0.3s;
-		}
-		.lesson-meta span {
-			display: inline-flex;
-			align-items: center;
-			gap: 4px;
-		}
-		.lesson-meta .icon {
-			font-size: 0.9rem;
-		}
-		.lesson-add-hw {
-			background: none;
-			border: none;
-			color: var(--text-muted);
-			cursor: pointer;
-			font-size: 1.2rem;
-			padding: 2px 8px;
-			border-radius: 30px;
-			transition: 0.2s;
-			margin-left: 8px;
-		}
-		.lesson-add-hw:hover {
-			background: var(--bg-btn-hover);
-			color: var(--text-btn);
-		}
-		.no-lessons {
-			padding: 20px;
-			text-align: center;
-			color: var(--text-muted);
-			font-style: italic;
-			transition: color 0.3s;
-		}
-
-		/* ========== БЛОК ДОМАШНИХ ЗАДАНИЙ ========== */
-		#homeworksContainer {
-			display: none;
-			background: var(--bg-card);
-			border-radius: 20px;
-			box-shadow: var(--shadow-card);
-			padding: 20px;
-			margin-top: 20px;
-			transition: background 0.3s;
-		}
-		#homeworksContainer.active {
-			display: block;
-		}
-		.hw-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 16px;
-		}
-		.hw-header h2 {
-			font-size: 1.4rem;
-			color: var(--text-heading);
-		}
-		.hw-actions {
-			display: flex;
-			gap: 10px;
-		}
-		.hw-actions button {
-			padding: 6px 14px;
-			border: 2px solid var(--border-btn);
-			border-radius: 30px;
-			background: var(--bg-card);
-			color: var(--text-btn);
-			font-weight: 600;
-			font-size: 0.85rem;
-			cursor: pointer;
-			transition: 0.2s;
-		}
-		.hw-actions button:hover {
-			background: var(--bg-btn-hover);
-		}
-		.hw-list {
-			display: flex;
-			flex-direction: column;
-			gap: 16px;
-		}
-		.hw-day-group {
-			background: var(--bg-header);
-			border-radius: 12px;
-			padding: 12px 16px;
-			transition: background 0.3s;
-		}
-		.hw-day-title {
-			font-weight: 700;
-			color: var(--text-heading);
-			margin-bottom: 8px;
-			font-size: 1.1rem;
-		}
-		.hw-item {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-			padding: 10px 0;
-			border-bottom: 1px solid var(--border-light);
-			transition: border-color 0.3s;
-		}
-		.hw-item:last-child {
-			border-bottom: none;
-		}
-		.hw-item .hw-checkbox {
-			width: 20px;
-			height: 20px;
-			cursor: pointer;
-			accent-color: var(--border-today);
-		}
-		.hw-item .hw-info {
-			flex: 1;
-		}
-		.hw-item .hw-subject {
-			font-weight: 600;
-			color: var(--text-primary);
-		}
-		.hw-item .hw-description {
-			font-size: 0.9rem;
-			color: var(--text-secondary);
-			margin-top: 2px;
-		}
-		.hw-item .hw-deadline {
-			font-size: 0.8rem;
-			color: var(--text-muted);
-		}
-		.hw-item .hw-delete {
-			background: none;
-			border: none;
-			color: var(--text-muted);
-			cursor: pointer;
-			font-size: 1.2rem;
-			padding: 4px 8px;
-			border-radius: 20px;
-			transition: 0.2s;
-		}
-		.hw-item .hw-delete:hover {
-			background: var(--bg-countdown-urgent);
-			color: var(--text-countdown-urgent);
-		}
-		.hw-empty {
-			padding: 30px;
-			text-align: center;
-			color: var(--text-muted);
-			font-style: italic;
-		}
-
-		/* ========== МОДАЛЬНОЕ ОКНО ========== */
-		.modal-overlay {
-			display: none;
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: var(--bg-modal);
-			z-index: 1000;
-			align-items: center;
-			justify-content: center;
-			backdrop-filter: blur(4px);
-		}
-		.modal-overlay.active {
-			display: flex;
-		}
-		.modal-content {
-			background: var(--bg-modal-content);
-			border-radius: 24px;
-			padding: 32px;
-			max-width: 500px;
-			width: 90%;
-			box-shadow: var(--shadow-modal);
-			position: relative;
-			transition: background 0.3s;
-		}
-		.modal-close {
-			position: absolute;
-			top: 12px;
-			right: 20px;
-			font-size: 1.6rem;
-			cursor: pointer;
-			color: var(--text-muted);
-			background: none;
-			border: none;
-			transition: 0.2s;
-		}
-		.modal-close:hover {
-			color: var(--text-primary);
-			transform: rotate(90deg);
-		}
-		.modal-title {
-			font-size: 1.4rem;
-			font-weight: 700;
-			color: var(--text-heading);
-			margin-bottom: 20px;
-		}
-		.modal-form label {
-			display: block;
-			font-weight: 600;
-			margin: 12px 0 4px;
-			color: var(--text-secondary);
-		}
-		.modal-form input, .modal-form textarea, .modal-form select {
-			width: 100%;
-			padding: 10px 12px;
-			border: 2px solid var(--border-btn);
-			border-radius: 12px;
-			background: var(--bg-card);
-			color: var(--text-primary);
-			font-size: 1rem;
-			transition: border-color 0.2s;
-		}
-		.modal-form input:focus, .modal-form textarea:focus, .modal-form select:focus {
-			outline: none;
-			border-color: var(--border-today);
-		}
-		.modal-form textarea {
-			resize: vertical;
-			min-height: 80px;
-		}
-		.modal-form .form-row {
-			display: flex;
-			gap: 12px;
-		}
-		.modal-form .form-row > * {
-			flex: 1;
-		}
-		.modal-form .submit-btn {
-			margin-top: 20px;
-			padding: 12px 24px;
-			background: var(--bg-btn-active);
-			color: var(--text-btn-active);
-			border: none;
-			border-radius: 40px;
-			font-weight: 700;
-			font-size: 1rem;
-			cursor: pointer;
-			transition: 0.2s;
-			width: 100%;
-		}
-		.modal-form .submit-btn:hover {
-			opacity: 0.9;
-			transform: scale(1.02);
-		}
-
-		/* ========== АДАПТИВНОСТЬ ========== */
-		@media (max-width: 500px) {
-			.lesson-item {
-				flex-wrap: wrap;
-				gap: 6px;
-			}
-			.lesson-time {
-				min-width: 70px;
-				font-size: 0.85rem;
-			}
-			.day-header {
-				font-size: 1rem;
-				padding: 10px 16px;
-			}
-			.tab-btn {
-				padding: 8px 20px;
-				font-size: 0.9rem;
-			}
-			.theme-btn {
-				font-size: 1rem;
-				padding: 6px 12px;
-			}
-			.modal-content {
-				padding: 20px;
-			}
-			.modal-form .form-row {
-				flex-direction: column;
-				gap: 0;
-			}
-		}
+        /* ===== Все стили (без изменений) ===== */
+        :root {
+            --bg-page: #f4f7fb;
+            --bg-card: #ffffff;
+            --bg-header: #f8fafc;
+            --bg-today: #f8faff;
+            --bg-current-lesson: #ecfdf5;
+            --bg-next-lesson: #ffffff;
+            --bg-empty-slot: #f8fafc;
+            --bg-holiday: #fef9c3;
+            --bg-badge: #e2e8f0;
+            --bg-badge-today: #bfdbfe;
+            --bg-btn: #ffffff;
+            --bg-btn-hover: #e2e8f0;
+            --bg-btn-active: #1e293b;
+            --bg-countdown: #eff6ff;
+            --bg-countdown-urgent: #fee2e2;
+            --bg-current-time: #d1fae5;
+            --bg-modal: rgba(0,0,0,0.4);
+            --bg-modal-content: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --text-heading: #0f172a;
+            --text-badge: #475569;
+            --text-badge-today: #1e40af;
+            --text-btn: #334155;
+            --text-btn-active: #ffffff;
+            --text-countdown: #3b82f6;
+            --text-countdown-urgent: #dc2626;
+            --text-current-label: #065f46;
+            --text-current-time: #059669;
+            --text-holiday: #1e293b;
+            --text-empty: #94a3b8;
+            --border-card: #94a3b8;
+            --border-today: #3b82f6;
+            --border-light: #e9edf2;
+            --border-current: #10b981;
+            --border-current-item: #d1fae5;
+            --border-lesson: #f1f5f9;
+            --border-btn: #cbd5e1;
+            --border-btn-active: #1e293b;
+            --border-modal: #cbd5e1;
+            --shadow-card: 0 4px 12px rgba(0,0,0,0.05);
+            --shadow-today: 0 4px 16px rgba(59, 130, 246, 0.15);
+            --shadow-next: 0 8px 24px rgba(0,0,0,0.08);
+            --shadow-current: 0 8px 24px rgba(0,0,0,0.08);
+            --shadow-modal: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        body.dark-theme {
+            --bg-page: #0f172a;
+            --bg-card: #1e293b;
+            --bg-header: #2d3748;
+            --bg-today: #1e2a3a;
+            --bg-current-lesson: #1a2a2f;
+            --bg-next-lesson: #1e293b;
+            --bg-empty-slot: #2d3748;
+            --bg-holiday: #422b2b;
+            --bg-badge: #334155;
+            --bg-badge-today: #1e3a5f;
+            --bg-btn: #1e293b;
+            --bg-btn-hover: #334155;
+            --bg-btn-active: #3b82f6;
+            --bg-countdown: #1e3a5f;
+            --bg-countdown-urgent: #4c1d1d;
+            --bg-current-time: #1a3a34;
+            --bg-modal: rgba(0,0,0,0.7);
+            --bg-modal-content: #1e293b;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --text-heading: #f1f5f9;
+            --text-badge: #cbd5e1;
+            --text-badge-today: #93c5fd;
+            --text-btn: #cbd5e1;
+            --text-btn-active: #ffffff;
+            --text-countdown: #60a5fa;
+            --text-countdown-urgent: #f87171;
+            --text-current-label: #6ee7b7;
+            --text-current-time: #6ee7b7;
+            --text-holiday: #fcd34d;
+            --text-empty: #64748b;
+            --border-card: #475569;
+            --border-today: #60a5fa;
+            --border-light: #334155;
+            --border-current: #34d399;
+            --border-current-item: #1a3a34;
+            --border-lesson: #334155;
+            --border-btn: #475569;
+            --border-btn-active: #3b82f6;
+            --border-modal: #475569;
+            --shadow-card: 0 4px 12px rgba(0,0,0,0.3);
+            --shadow-today: 0 4px 16px rgba(96, 165, 250, 0.25);
+            --shadow-next: 0 8px 24px rgba(0,0,0,0.4);
+            --shadow-current: 0 8px 24px rgba(0,0,0,0.4);
+            --shadow-modal: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: var(--bg-page);
+            padding: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+            color: var(--text-primary);
+            transition: background 0.3s, color 0.3s;
+        }
+        h1 { text-align: center; font-weight: 600; font-size: 1.8rem; margin-bottom: 16px; color: var(--text-heading); letter-spacing: -0.5px; transition: color 0.3s; }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .header-container h1 { margin: 0; flex: 1; text-align: center; }
+        .theme-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--border-btn);
+            border-radius: 40px;
+            padding: 8px 16px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+            color: var(--text-btn);
+        }
+        .theme-btn:hover { background: var(--bg-btn-hover); }
+        .tab-switcher {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .tab-btn {
+            padding: 10px 28px;
+            border: 2px solid var(--border-btn);
+            background: var(--bg-card);
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            color: var(--text-btn);
+        }
+        .tab-btn:hover { background: var(--bg-btn-hover); }
+        .tab-btn.active {
+            background: var(--bg-btn-active);
+            border-color: var(--border-btn-active);
+            color: var(--text-btn-active);
+        }
+        .tab-btn.active:hover { background: var(--bg-btn-active); }
+        .week-navigation {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .week-nav-btn {
+            padding: 8px 20px;
+            border: 2px solid var(--border-btn);
+            background: var(--bg-card);
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            color: var(--text-btn);
+        }
+        .week-nav-btn:hover { background: var(--bg-btn-hover); }
+        .week-info {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-heading);
+            min-width: 160px;
+            text-align: center;
+        }
+        .week-info .week-number { font-size: 1.3rem; }
+        .week-info .week-parity {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-left: 6px;
+        }
+        .today-filter { margin-left: 8px; }
+        .tab-btn.active.today-filter {
+            background: var(--bg-btn-active);
+            border-color: var(--border-btn-active);
+            color: var(--text-btn-active);
+        }
+        .current-lesson-block {
+            background: var(--bg-current-lesson);
+            border-radius: 20px;
+            box-shadow: var(--shadow-current);
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            border-left: 6px solid var(--border-current);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        .current-lesson-block .current-lesson-label {
+            font-weight: 700;
+            color: var(--text-current-label);
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            transition: color 0.3s;
+        }
+        .current-lesson-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px 20px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-current-item);
+            transition: border-color 0.3s;
+        }
+        .current-lesson-item:last-child { border-bottom: none; }
+        .current-lesson-item .lesson-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-heading);
+            transition: color 0.3s;
+        }
+        .current-lesson-item .lesson-meta {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            transition: color 0.3s;
+        }
+        .current-lesson-item .time-left {
+            font-weight: 600;
+            color: var(--text-current-time);
+            background: var(--bg-current-time);
+            padding: 2px 12px;
+            border-radius: 30px;
+            transition: background 0.3s, color 0.3s;
+        }
+        .next-lesson-block {
+            background: var(--bg-next-lesson);
+            border-radius: 20px;
+            box-shadow: var(--shadow-next);
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            border-left: 6px solid var(--border-today);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        .next-lesson-block .label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            transition: color 0.3s;
+        }
+        .next-lesson-block .main-info {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 12px 20px;
+        }
+        .next-lesson-block .lesson-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            transition: color 0.3s;
+        }
+        .next-lesson-block .lesson-meta {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            transition: color 0.3s;
+        }
+        .next-lesson-block .lesson-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .next-lesson-block .countdown {
+            margin-top: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-countdown);
+            background: var(--bg-countdown);
+            padding: 8px 16px;
+            border-radius: 40px;
+            display: inline-block;
+            transition: background 0.3s, color 0.3s;
+        }
+        .next-lesson-block .countdown.urgent {
+            color: var(--text-countdown-urgent);
+            background: var(--bg-countdown-urgent);
+        }
+        .next-lesson-block .no-lessons {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            transition: color 0.3s;
+        }
+        .holiday-message {
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 1.3rem;
+            color: var(--text-holiday);
+            background: var(--bg-holiday);
+            border-radius: 12px;
+            margin: 12px 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+        .holiday-message .holiday-icon {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .holiday-message .holiday-text { font-weight: 600; }
+        .schedule-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .day-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+            border-left: 6px solid var(--border-card);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        .day-card.today {
+            border-left-color: var(--border-today);
+            background: var(--bg-today);
+            box-shadow: var(--shadow-today);
+        }
+        .day-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-light);
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .day-header .date-badge {
+            background: var(--bg-badge);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--text-badge);
+            transition: background 0.3s, color 0.3s;
+        }
+        .day-card.today .day-header {
+            background: var(--bg-today);
+        }
+        .day-card.today .date-badge {
+            background: var(--bg-badge-today);
+            color: var(--text-badge-today);
+        }
+        .lesson-list { padding: 8px 0; }
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-lesson);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .lesson-item:last-child { border-bottom: none; }
+        .lesson-item.current {
+            background: var(--bg-current-lesson);
+            border-left: 4px solid var(--border-current);
+        }
+        .lesson-item.empty-slot {
+            background: var(--bg-empty-slot);
+            opacity: 0.7;
+            border-left: 3px solid var(--border-card);
+        }
+        .lesson-item.empty-slot .lesson-name {
+            color: var(--text-empty);
+            font-style: italic;
+        }
+        .lesson-time {
+            font-weight: 500;
+            color: var(--text-primary);
+            min-width: 90px;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+        .lesson-info { flex: 1; }
+        .lesson-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-primary);
+            transition: color 0.3s;
+        }
+        .lesson-meta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 2px;
+            transition: color 0.3s;
+        }
+        .lesson-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .lesson-meta .icon { font-size: 0.9rem; }
+        .lesson-add-hw {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 2px 8px;
+            border-radius: 30px;
+            transition: 0.2s;
+            margin-left: 8px;
+        }
+        .lesson-add-hw:hover {
+            background: var(--bg-btn-hover);
+            color: var(--text-btn);
+        }
+        .no-lessons {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+            transition: color 0.3s;
+        }
+        #homeworksContainer {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: var(--shadow-card);
+            padding: 20px;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        #homeworksContainer.active { display: block; }
+        .hw-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .hw-header h2 {
+            font-size: 1.4rem;
+            color: var(--text-heading);
+        }
+        .hw-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .hw-actions button {
+            padding: 6px 14px;
+            border: 2px solid var(--border-btn);
+            border-radius: 30px;
+            background: var(--bg-card);
+            color: var(--text-btn);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .hw-actions button:hover { background: var(--bg-btn-hover); }
+        .hw-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .hw-day-group {
+            background: var(--bg-header);
+            border-radius: 12px;
+            padding: 12px 16px;
+            transition: background 0.3s;
+        }
+        .hw-day-title {
+            font-weight: 700;
+            color: var(--text-heading);
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        .hw-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-light);
+            transition: border-color 0.3s;
+        }
+        .hw-item:last-child { border-bottom: none; }
+        .hw-item .hw-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--border-today);
+        }
+        .hw-item .hw-info { flex: 1; }
+        .hw-item .hw-subject {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .hw-item .hw-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        .hw-item .hw-deadline {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .hw-item .hw-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+            transition: 0.2s;
+        }
+        .hw-item .hw-delete:hover {
+            background: var(--bg-countdown-urgent);
+            color: var(--text-countdown-urgent);
+        }
+        .hw-empty {
+            padding: 30px;
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-modal);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--bg-modal-content);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: var(--shadow-modal);
+            position: relative;
+            transition: background 0.3s;
+        }
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 20px;
+            font-size: 1.6rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            transition: 0.2s;
+        }
+        .modal-close:hover {
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin-bottom: 20px;
+        }
+        .modal-form label {
+            display: block;
+            font-weight: 600;
+            margin: 12px 0 4px;
+            color: var(--text-secondary);
+        }
+        .modal-form input, .modal-form textarea, .modal-form select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border-btn);
+            border-radius: 12px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .modal-form input:focus, .modal-form textarea:focus, .modal-form select:focus {
+            outline: none;
+            border-color: var(--border-today);
+        }
+        .modal-form textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .modal-form .submit-btn {
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: var(--bg-btn-active);
+            color: var(--text-btn-active);
+            border: none;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+        }
+        .modal-form .submit-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        @media (max-width: 500px) {
+            .lesson-item { flex-wrap: wrap; gap: 6px; }
+            .lesson-time { min-width: 70px; font-size: 0.85rem; }
+            .day-header { font-size: 1rem; padding: 10px 16px; }
+            .tab-btn { padding: 8px 20px; font-size: 0.9rem; }
+            .theme-btn { font-size: 1rem; padding: 6px 12px; }
+            .modal-content { padding: 20px; }
+            .week-nav-btn { padding: 6px 16px; font-size: 0.9rem; }
+            .week-info { min-width: 120px; font-size: 1rem; }
+        }
     </style>
 </head>
 <body>
-	<div class="header-container">
-		<h1>📚 Расписание</h1>
-		<button id="themeToggle" class="theme-btn">🌙</button>
-	</div>
-
-	<!-- ===== ВКЛАДКИ ===== -->
-	<div class="tab-switcher" id="mainTabs">
-		<button class="tab-btn active" data-tab="schedule">📅 Расписание</button>
-		<button class="tab-btn" data-tab="homeworks">📋 Домашние задания</button>
-	</div>
-
-	<!-- ===== КОНТРОЛЫ РАСПИСАНИЯ ===== -->
-	<div class="week-switcher" id="scheduleControls">
-		<button class="tab-btn week-btn" data-week="even">Чётная</button>
-		<button class="tab-btn week-btn" data-week="odd">Нечётная</button>
-		<button id="todayFilterBtn" class="tab-btn today-filter">📅 Сегодня</button>
-	</div>
-
-	<!-- ===== ТЕКУЩАЯ И СЛЕДУЮЩАЯ ПАРА ===== -->
-	<div id="currentLessonBlock" class="current-lesson-block" style="display: none;">
-		<div id="currentLessonContent"></div>
-	</div>
-	<div id="nextLessonBlock" class="next-lesson-block">
-		<div class="label">⏳ Следующая пара</div>
-		<div id="nextLessonContent">
-			<!-- заполняется скриптом -->
-		</div>
-	</div>
-
-	<!-- ===== РАСПИСАНИЕ ===== -->
-	<div id="scheduleContainer" class="schedule-grid">
-		<!-- сюда будет вставлено расписание -->
-	</div>
-
-	<!-- ===== БЛОК ДОМАШНИХ ЗАДАНИЙ ===== -->
-	<div id="homeworksContainer" class="active">
-		<div class="hw-header">
-			<h2>📋 Домашние задания</h2>
-			<div class="hw-actions">
-				<button id="exportHwBtn">⬇️ Экспорт</button>
-				<button id="importHwBtn">⬆️ Импорт</button>
-			</div>
-		</div>
-		<div id="hwList" class="hw-list">
-			<!-- сюда будет вставлен список ДЗ -->
-		</div>
-	</div>
-
-	<!-- ===== МОДАЛЬНОЕ ОКНО ДЛЯ ДОБАВЛЕНИЯ ДЗ ===== -->
-	<div id="hwModal" class="modal-overlay">
-		<div class="modal-content">
-			<button class="modal-close" id="hwModalClose">&times;</button>
-			<div class="modal-title" id="hwModalTitle">➕ Добавить задание</div>
-			<form id="hwForm" class="modal-form">
-				<input type="hidden" id="hwEditId" value="">
-				<label for="hwDay">День недели</label>
-				<select id="hwDay" required>
-					<option value="1">Понедельник</option>
-					<option value="2">Вторник</option>
-					<option value="3">Среда</option>
-					<option value="4">Четверг</option>
-					<option value="5">Пятница</option>
-					<option value="6">Суббота</option>
-					<option value="7">Воскресенье</option>
-				</select>
-
-				<label for="hwSubject">Предмет</label>
-				<input type="text" id="hwSubject" placeholder="Название предмета" required>
-
-				<label for="hwDescription">Описание задания</label>
-				<textarea id="hwDescription" placeholder="Что нужно сделать?" required></textarea>
-
-				<label for="hwDeadline">Дедлайн (опционально)</label>
-				<input type="date" id="hwDeadline">
-
-				<button type="submit" class="submit-btn">Сохранить</button>
-			</form>
-		</div>
-	</div>
-
-<script>
-// ================================================================
-//  МОДУЛЬ РАСПИСАНИЯ + FIRESTORE (структурированная версия)
-// ================================================================
-
-(function() {
-    'use strict';
-
-    // ========== 1. КОНФИГУРАЦИЯ FIREBASE ==========
-    const firebaseConfig = {
-        apiKey: "AIzaSyBJLntTOgh8nqXKDLfQt0Cixc3U3JUQKSs",
-        authDomain: "scheduleapp-1c897.firebaseapp.com",
-        projectId: "scheduleapp-1c897",
-        storageBucket: "scheduleapp-1c897.firebasestorage.app",
-        messagingSenderId: "512840221806",
-        appId: "1:512840221806:web:f7f399d8b92846879bd27f"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    // ========== 2. ПЕРЕМЕННЫЕ ДАННЫХ ==========
-    // Заполняются после загрузки data.json
-    let TIME_SLOTS = [];
-    let LESSONS_DATA = [];
-    let HOLIDAYS = [];
-    let START_WEEK_REFERENCE = null;
-
-    const DAY_NAMES = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
-    const NUMBER_OF_DAYS = 7;
-
-    // ========== 3. СОСТОЯНИЕ ПРИЛОЖЕНИЯ ==========
-    const state = {
-        currentWeek: 'even',        // 'even' или 'odd'
-        filterToday: false,         // показывать только сегодня
-        theme: 'light',             // 'light' или 'dark'
-        activeTab: 'schedule',      // 'schedule' или 'homeworks'
-        notificationTimer: null     // таймер для уведомления
-    };
-
-    // ========== 4. КЭШ DOM ==========
-    const dom = {
-        themeToggle: document.getElementById('themeToggle'),
-        currentLessonBlock: document.getElementById('currentLessonBlock'),
-        currentLessonContent: document.getElementById('currentLessonContent'),
-        nextLessonContent: document.getElementById('nextLessonContent'),
-        scheduleContainer: document.getElementById('scheduleContainer'),
-        weekButtons: document.querySelectorAll('.week-btn'),
-        filterBtn: document.getElementById('todayFilterBtn'),
-        mainTabs: document.querySelectorAll('#mainTabs .tab-btn'),
-        scheduleControls: document.getElementById('scheduleControls'),
-        homeworksContainer: document.getElementById('homeworksContainer'),
-        hwList: document.getElementById('hwList'),
-        hwModal: document.getElementById('hwModal'),
-        hwModalClose: document.getElementById('hwModalClose'),
-        hwForm: document.getElementById('hwForm'),
-        hwEditId: document.getElementById('hwEditId'),
-        hwDay: document.getElementById('hwDay'),
-        hwSubject: document.getElementById('hwSubject'),
-        hwDescription: document.getElementById('hwDescription'),
-        hwDeadline: document.getElementById('hwDeadline'),
-        hwModalTitle: document.getElementById('hwModalTitle'),
-        exportHwBtn: document.getElementById('exportHwBtn'),
-        importHwBtn: document.getElementById('importHwBtn')
-    };
-
-    // ========== 5. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
-
-    /** Определяет тип текущей недели ('even' или 'odd') относительно START_WEEK_REFERENCE */
-    function getDefaultWeek() {
-        const now = new Date();
-        const diff = Math.floor((now - START_WEEK_REFERENCE) / (7 * 24 * 60 * 60 * 1000));
-        return (diff % 2 === 0) ? 'even' : 'odd';
-    }
-
-    /** Возвращает номер текущего дня недели (1 = ПН, …, 7 = ВС) */
-    function getTodayIndex() {
-        const day = new Date().getDay();
-        return day === 0 ? 7 : day;
-    }
-
-    /** Форматирует дату в строку "день месяц" (например, "31 августа") */
-    function formatDate(date) {
-        return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-    }
-
-    /** Возвращает объект Date для указанного дня недели (1..7) относительно текущей недели */
-    function getDateByDayIndex(dayIndex) {
-        const now = new Date();
-        const todayIdx = getTodayIndex();
-        const monday = new Date(now);
-        monday.setDate(now.getDate() - (todayIdx - 1));
-        const target = new Date(monday);
-        target.setDate(monday.getDate() + (dayIndex - 1));
-        return target;
-    }
-
-    /** Проверяет, является ли дата праздничной, и возвращает описание или null */
-    function getHolidayDescription(date) {
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const key = `${day}.${month}`;
-        const holiday = HOLIDAYS.find(h => h.date === key);
-        return holiday ? holiday.description : null;
-    }
-
-    /** Проверяет доступность занятия по дате начала (если задано) */
-    function isLessonAvailable(lesson) {
-        if (!lesson.dateStart) return true;
-        const now = new Date();
-        const [day, month] = lesson.dateStart.split('.').map(Number);
-        const startDate = new Date(now.getFullYear(), month - 1, day);
-        startDate.setDate(startDate.getDate() - 5); // показываем за 5 дней до старта
-        return now >= startDate;
-    }
-
-    /** Возвращает массив занятий для указанного дня, недели и даты (с учётом праздников) */
-    function getLessonsForDay(dayIndex, weekType, date) {
-        if (getHolidayDescription(date)) return [];
-        return LESSONS_DATA.filter(lesson => {
-            if (!isLessonAvailable(lesson)) return false;
-            if (lesson.weekType === 'both') return true;
-            return lesson.weekType === weekType;
-        }).filter(lesson => lesson.day === dayIndex);
-    }
-
-    /** Проверяет, попадает ли время в указанный слот (включая границы) */
-    function isTimeInSlot(timeStr, slot) {
-        return timeStr >= slot.start && timeStr <= slot.end;
-    }
-
-    /** Вычисляет оставшееся время до указанной даты в формате ЧЧ:ММ:СС или ММ:СС */
-    function getTimeRemaining(targetDate) {
-        const diff = targetDate.getTime() - Date.now();
-        if (diff <= 0) return '🔴 Идёт сейчас!';
-        const seconds = Math.floor(diff / 1000);
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-        const pad = n => String(n).padStart(2, '0');
-        return hours > 0
-            ? `${pad(hours)}:${pad(minutes)}:${pad(secs)}`
-            : `${pad(minutes)}:${pad(secs)}`;
-    }
-
-    // ---------- УВЕДОМЛЕНИЯ ----------
-    function requestNotificationPermission() {
-        if (!('Notification' in window)) return;
-        if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
-        Notification.requestPermission();
-    }
-
-    function showLessonNotification(lesson, startTime, dayName) {
-        if (Notification.permission !== 'granted') return;
-        const notif = new Notification(`⏰ Скоро начнётся: ${lesson.name} в ${startTime}`, {
-            body: `Преподаватель: ${lesson.teacher}\nАудитория: ${lesson.room}`,
-            icon: '📚',
-            silent: false,
-            vibrate: [200, 100, 200]
-        });
-        setTimeout(() => notif.close(), 10000);
-    }
-
-    /** Планирует уведомление за 5 минут до ближайшей пары */
-    function scheduleNotification() {
-        if (state.notificationTimer) {
-            clearTimeout(state.notificationTimer);
-            state.notificationTimer = null;
-        }
-
-        const now = new Date();
-        const currentTimeStr = now.toTimeString().slice(0, 5);
-        const todayIdx = getTodayIndex();
-        const todayDate = getDateByDayIndex(todayIdx);
-
-        if (getHolidayDescription(todayDate)) return;
-
-        // Все занятия сегодня
-        let todayLessons = getLessonsForDay(todayIdx, state.currentWeek, todayDate);
-        todayLessons.sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
-
-        // Ищем первое будущее занятие
-        let nextLesson = null;
-        for (const lesson of todayLessons) {
-            const slot = TIME_SLOTS[lesson.slot];
-            if (slot && slot.start >= currentTimeStr) {
-                nextLesson = lesson;
-                break;
-            }
-        }
-
-        let targetDay = todayIdx;
-        let targetLesson = nextLesson;
-
-        // Если сегодня ничего нет – ищем в следующие дни
-        if (!targetLesson) {
-            for (let offset = 1; offset <= NUMBER_OF_DAYS; offset++) {
-                let checkDay = todayIdx + offset;
-                if (checkDay > NUMBER_OF_DAYS) checkDay -= NUMBER_OF_DAYS;
-                const checkDate = getDateByDayIndex(checkDay);
-                const dayLessons = getLessonsForDay(checkDay, state.currentWeek, checkDate);
-                if (dayLessons.length > 0) {
-                    const sorted = [...dayLessons].sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
-                    targetLesson = sorted[0];
-                    targetDay = checkDay;
-                    break;
-                }
-            }
-        }
-
-        if (!targetLesson) return;
-
-        const slot = TIME_SLOTS[targetLesson.slot];
-        if (!slot) return;
-
-        const [startHour, startMinute] = slot.start.split(':').map(Number);
-        let startDate = new Date(now);
-        startDate.setHours(startHour, startMinute, 0, 0);
-        if (targetDay !== todayIdx) {
-            let diffDays = targetDay - todayIdx;
-            if (diffDays < 0) diffDays += NUMBER_OF_DAYS;
-            startDate.setDate(startDate.getDate() + diffDays);
-        }
-
-        const timeToStart = startDate.getTime() - now.getTime();
-        const notifyAt = timeToStart - 5 * 60 * 1000; // за 5 минут
-
-        if (notifyAt > 1000) {
-            state.notificationTimer = setTimeout(() => {
-                const dayName = (targetDay !== todayIdx) ? DAY_NAMES[targetDay - 1] : 'сегодня';
-                showLessonNotification(targetLesson, slot.start, dayName);
-            }, notifyAt);
-        }
-    }
-
-    // ========== 6. ФУНКЦИИ РАБОТЫ С FIRESTORE (ДЗ) ==========
-
-    /** Подписка на изменения коллекции homeworks */
-    function listenHomeworks(callback) {
-        db.collection('homeworks')
-            .orderBy('day', 'asc')
-            .onSnapshot(snapshot => {
-                const homeworks = [];
-                snapshot.forEach(doc => {
-                    homeworks.push({ id: doc.id, ...doc.data() });
-                });
-                callback(homeworks);
-            }, error => console.error('Ошибка загрузки ДЗ:', error));
-    }
-
-    /** Добавление нового задания */
-    async function addHomework(hw) {
-        try {
-            const docRef = await db.collection('homeworks').add({
-                ...hw,
-                done: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            return docRef.id;
-        } catch (error) {
-            console.error('Ошибка добавления ДЗ:', error);
-            throw error;
-        }
-    }
-
-    /** Обновление существующего задания */
-    async function updateHomework(id, data) {
-        try {
-            await db.collection('homeworks').doc(id).update(data);
-        } catch (error) {
-            console.error('Ошибка обновления ДЗ:', error);
-            throw error;
-        }
-    }
-
-    /** Удаление задания */
-    async function deleteHomework(id) {
-        try {
-            await db.collection('homeworks').doc(id).delete();
-        } catch (error) {
-            console.error('Ошибка удаления ДЗ:', error);
-            throw error;
-        }
-    }
-
-    /** Переключение статуса выполнения */
-    async function toggleHomeworkDone(id, currentDone) {
-        await updateHomework(id, { done: !currentDone });
-    }
-
-    // ========== 7. ОТРИСОВКА ДОМАШНИХ ЗАДАНИЙ ==========
-
-    let homeworksData = [];
-
-    function renderHomeworks() {
-        const list = dom.hwList;
-        if (!list) return;
-
-        if (homeworksData.length === 0) {
-            list.innerHTML = `<div class="hw-empty">📭 Пока нет заданий. Нажмите на <strong>➕</strong> рядом с парой в расписании, чтобы добавить.</div>`;
-            return;
-        }
-
-        // Группируем по дням
-        const groups = {};
-        homeworksData.forEach(hw => {
-            const day = hw.day || 1;
-            if (!groups[day]) groups[day] = [];
-            groups[day].push(hw);
-        });
-
-        let html = '';
-        for (let d = 1; d <= 7; d++) {
-            const items = groups[d] || [];
-            if (items.length === 0) continue;
-            html += `<div class="hw-day-group">`;
-            html += `<div class="hw-day-title">${DAY_NAMES[d-1]}</div>`;
-            items.forEach(hw => {
-                const checked = hw.done ? 'checked' : '';
-                const style = hw.done ? 'text-decoration: line-through; opacity: 0.6;' : '';
-                html += `
-                    <div class="hw-item">
-                        <input type="checkbox" class="hw-checkbox" data-id="${hw.id}" ${checked}>
-                        <div class="hw-info">
-                            <div class="hw-subject" style="${style}">${hw.subject}</div>
-                            <div class="hw-description">${hw.description}</div>
-                            ${hw.deadline ? `<div class="hw-deadline">⏳ Дедлайн: ${hw.deadline}</div>` : ''}
-                        </div>
-                        <button class="hw-delete" data-id="${hw.id}">🗑️</button>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-        }
-        list.innerHTML = html;
-
-        // Обработчики (делегирование)
-        list.querySelectorAll('.hw-checkbox').forEach(cb => {
-            cb.addEventListener('change', function() {
-                const id = this.dataset.id;
-                const hw = homeworksData.find(h => h.id === id);
-                if (hw) toggleHomeworkDone(id, hw.done);
-            });
-        });
-
-        list.querySelectorAll('.hw-delete').forEach(btn => {
-            btn.addEventListener('click', function() {
-                if (confirm('Удалить задание?')) {
-                    deleteHomework(this.dataset.id);
-                }
-            });
-        });
-    }
-
-    // ========== 8. МОДАЛЬНОЕ ОКНО ДЗ ==========
-
-    function openHomeworkModal(day, subject, editId = null) {
-        const modal = dom.hwModal;
-        const title = dom.hwModalTitle;
-
-        if (editId) {
-            const hw = homeworksData.find(h => h.id === editId);
-            if (!hw) return;
-            title.textContent = '✏️ Редактировать задание';
-            dom.hwEditId.value = hw.id;
-            dom.hwDay.value = hw.day;
-            dom.hwSubject.value = hw.subject;
-            dom.hwDescription.value = hw.description;
-            dom.hwDeadline.value = hw.deadline || '';
-        } else {
-            title.textContent = '➕ Добавить задание';
-            dom.hwEditId.value = '';
-            dom.hwDay.value = day || 1;
-            dom.hwSubject.value = subject || '';
-            dom.hwDescription.value = '';
-            dom.hwDeadline.value = '';
-        }
-        modal.classList.add('active');
-    }
-
-    function closeHomeworkModal() {
-        dom.hwModal.classList.remove('active');
-        dom.hwForm.reset();
-        dom.hwEditId.value = '';
-    }
-
-    async function handleHomeworkSubmit(e) {
-        e.preventDefault();
-        const id = dom.hwEditId.value;
-        const day = parseInt(dom.hwDay.value);
-        const subject = dom.hwSubject.value.trim();
-        const description = dom.hwDescription.value.trim();
-        const deadline = dom.hwDeadline.value || '';
-
-        if (!subject || !description) {
-            alert('Заполните название предмета и описание');
-            return;
-        }
-
-        const hw = { day, subject, description, deadline };
-        if (id) {
-            await updateHomework(id, hw);
-        } else {
-            await addHomework(hw);
-        }
-        closeHomeworkModal();
-        // renderHomeworks() обновится автоматически через onSnapshot
-    }
-
-    // ========== 9. ЭКСПОРТ / ИМПОРТ ДЗ ==========
-
-    function exportHomeworks() {
-        const data = homeworksData;
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `homeworks_${new Date().toISOString().slice(0,10)}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
-    function importHomeworks() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async function(ev) {
-                try {
-                    const data = JSON.parse(ev.target.result);
-                    if (Array.isArray(data)) {
-                        for (const hw of data) {
-                            await addHomework(hw);
-                        }
-                        alert('Импорт выполнен!');
-                    } else {
-                        alert('Неверный формат файла');
-                    }
-                } catch (err) {
-                    alert('Ошибка при чтении файла');
-                }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
-    }
-
-    // ========== 10. ОБНОВЛЕНИЕ БЛОКОВ (текущая и следующая пара) ==========
-
-    function updateCurrentLesson() {
-        const now = new Date();
-        const currentTimeStr = now.toTimeString().slice(0, 5);
-        const todayIdx = getTodayIndex();
-        const date = getDateByDayIndex(todayIdx);
-
-        if (getHolidayDescription(date)) {
-            dom.currentLessonBlock.style.display = 'none';
-            return;
-        }
-
-        const lessons = getLessonsForDay(todayIdx, state.currentWeek, date);
-        const currentLessons = lessons.filter(lesson => {
-            const slot = TIME_SLOTS[lesson.slot];
-            return slot && isTimeInSlot(currentTimeStr, slot);
-        });
-
-        if (currentLessons.length === 0) {
-            dom.currentLessonBlock.style.display = 'none';
-            return;
-        }
-
-        dom.currentLessonBlock.style.display = 'block';
-        let html = '<div class="current-lesson-label">🔴 Идёт сейчас</div>';
-        currentLessons.forEach(lesson => {
-            const slot = TIME_SLOTS[lesson.slot];
-            const end = new Date();
-            const [endHour, endMin] = slot.end.split(':').map(Number);
-            end.setHours(endHour, endMin, 0, 0);
-            const diff = end.getTime() - Date.now();
-            const timeLeft = diff > 0
-                ? `Осталось ${Math.floor(diff / 60000)} мин ${Math.floor((diff % 60000) / 1000)} сек`
-                : 'Заканчивается';
-
-            html += `
-                <div class="current-lesson-item">
-                    <span class="lesson-name">${lesson.name}</span>
-                    <span class="lesson-meta">🏛️ ${lesson.room} | 👨‍🏫 ${lesson.teacher}</span>
-                    <span class="time-left">⏳ ${timeLeft}</span>
-                </div>
-            `;
-        });
-        dom.currentLessonContent.innerHTML = html;
-    }
-
-    function updateNextLesson() {
-        const container = dom.nextLessonContent;
-        const now = new Date();
-        const currentTimeStr = now.toTimeString().slice(0, 5);
-        const todayIdx = getTodayIndex();
-        const todayDate = getDateByDayIndex(todayIdx);
-
-        let todayLessons = getLessonsForDay(todayIdx, state.currentWeek, todayDate);
-        todayLessons.sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
-
-        let nextLesson = null;
-        for (const lesson of todayLessons) {
-            const slot = TIME_SLOTS[lesson.slot];
-            if (slot && slot.start >= currentTimeStr) {
-                nextLesson = lesson;
-                break;
-            }
-        }
-
-        let targetDay = todayIdx;
-        let targetLesson = nextLesson;
-
-        if (!targetLesson) {
-            for (let offset = 1; offset <= NUMBER_OF_DAYS; offset++) {
-                let checkDay = todayIdx + offset;
-                if (checkDay > NUMBER_OF_DAYS) checkDay -= NUMBER_OF_DAYS;
-                const checkDate = getDateByDayIndex(checkDay);
-                const dayLessons = getLessonsForDay(checkDay, state.currentWeek, checkDate);
-                if (dayLessons.length > 0) {
-                    const sorted = [...dayLessons].sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
-                    targetLesson = sorted[0];
-                    targetDay = checkDay;
-                    break;
-                }
-            }
-        }
-
-        if (!targetLesson) {
-            container.innerHTML = `<div class="no-lessons">🎉 На этой неделе занятий нет</div>`;
-            return;
-        }
-
-        const slot = TIME_SLOTS[targetLesson.slot];
-        if (!slot) {
-            container.innerHTML = `<div class="no-lessons">⚠️ Ошибка: время не указано</div>`;
-            return;
-        }
-
-        const [startHour, startMinute] = slot.start.split(':').map(Number);
-        let startDate = new Date(now);
-        startDate.setHours(startHour, startMinute, 0, 0);
-        if (targetDay !== todayIdx) {
-            let diffDays = targetDay - todayIdx;
-            if (diffDays < 0) diffDays += NUMBER_OF_DAYS;
-            startDate.setDate(startDate.getDate() + diffDays);
-        }
-
-        const countdownText = getTimeRemaining(startDate);
-        const isUrgent = (startDate.getTime() - now.getTime() <= 600000 && startDate.getTime() - now.getTime() > 0);
-        const dayPrefix = (targetDay !== todayIdx) ? ` (${DAY_NAMES[targetDay-1]})` : '';
-
-        container.innerHTML = `
-            <div class="main-info">
-                <span class="lesson-name">${targetLesson.name}</span>
-                <span class="lesson-meta">
-                    <span>🏛️ ${targetLesson.room}</span>
-                    <span>👨‍🏫 ${targetLesson.teacher}</span>
-                    <span>⏰ ${slot.start}${dayPrefix}</span>
-                </span>
+    <div class="header-container">
+        <h1>📚 Расписание</h1>
+        <button id="themeToggle" class="theme-btn">🌙</button>
+    </div>
+
+    <!-- Вкладки -->
+    <div class="tab-switcher" id="mainTabs">
+        <button class="tab-btn active" data-tab="schedule">📅 Расписание</button>
+        <button class="tab-btn" data-tab="homeworks">📋 Домашние задания</button>
+    </div>
+
+    <!-- Навигация по неделям -->
+    <div class="week-navigation">
+        <button class="week-nav-btn" id="prevWeekBtn">◀ Пред.</button>
+        <span class="week-info" id="weekInfo">
+            <span class="week-number" id="weekNumberDisplay">Неделя 1</span>
+            <span class="week-parity" id="weekParityDisplay">(чётная)</span>
+        </span>
+        <button class="week-nav-btn" id="nextWeekBtn">След. ▶</button>
+        <button id="todayFilterBtn" class="tab-btn today-filter">📅 Сегодня</button>
+    </div>
+
+    <!-- Блоки текущей и следующей пары -->
+    <div id="currentLessonBlock" class="current-lesson-block" style="display: none;">
+        <div id="currentLessonContent"></div>
+    </div>
+    <div id="nextLessonBlock" class="next-lesson-block">
+        <div class="label">⏳ Следующая пара</div>
+        <div id="nextLessonContent"></div>
+    </div>
+
+    <!-- Расписание -->
+    <div id="scheduleContainer" class="schedule-grid"></div>
+
+    <!-- Домашние задания -->
+    <div id="homeworksContainer" class="active">
+        <div class="hw-header">
+            <h2>📋 Домашние задания</h2>
+            <div class="hw-actions">
+                <button id="exportHwBtn">⬇️ Экспорт</button>
+                <button id="importHwBtn">⬆️ Импорт</button>
             </div>
-            <div class="countdown ${isUrgent ? 'urgent' : ''}">${countdownText}</div>
-        `;
-        scheduleNotification();
-    }
+        </div>
+        <div id="hwList" class="hw-list"></div>
+    </div>
 
-    // ========== 11. ОСНОВНАЯ ОТРИСОВКА РАСПИСАНИЯ ==========
+    <!-- Модалка ДЗ -->
+    <div id="hwModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" id="hwModalClose">&times;</button>
+            <div class="modal-title" id="hwModalTitle">➕ Добавить задание</div>
+            <form id="hwForm" class="modal-form">
+                <input type="hidden" id="hwEditId" value="">
+                <label for="hwDay">День недели</label>
+                <select id="hwDay" required>
+                    <option value="1">Понедельник</option>
+                    <option value="2">Вторник</option>
+                    <option value="3">Среда</option>
+                    <option value="4">Четверг</option>
+                    <option value="5">Пятница</option>
+                    <option value="6">Суббота</option>
+                    <option value="7">Воскресенье</option>
+                </select>
+                <label for="hwSubject">Предмет</label>
+                <input type="text" id="hwSubject" placeholder="Название предмета" required>
+                <label for="hwDescription">Описание задания</label>
+                <textarea id="hwDescription" placeholder="Что нужно сделать?" required></textarea>
+                <label for="hwDeadline">Дедлайн (опционально)</label>
+                <input type="date" id="hwDeadline">
+                <button type="submit" class="submit-btn">Сохранить</button>
+            </form>
+        </div>
+    </div>
 
-    function renderSchedule() {
-        const container = dom.scheduleContainer;
-        const now = new Date();
-        const currentTimeStr = now.toTimeString().slice(0, 5);
-        const todayIdx = getTodayIndex();
-
-        // Группировка по дням и слотам
-        const grouped = {};
-        for (let d = 1; d <= NUMBER_OF_DAYS; d++) {
-            grouped[d] = new Array(TIME_SLOTS.length).fill(null);
-        }
-
-        const filtered = LESSONS_DATA.filter(lesson => {
-            if (!isLessonAvailable(lesson)) return false;
-            if (lesson.weekType === 'both') return true;
-            return lesson.weekType === state.currentWeek;
-        });
-
-        filtered.forEach(lesson => {
-            const dayDate = getDateByDayIndex(lesson.day);
-            if (getHolidayDescription(dayDate)) return;
-            if (grouped[lesson.day] && lesson.slot !== undefined) {
-                if (!Array.isArray(grouped[lesson.day][lesson.slot])) {
-                    grouped[lesson.day][lesson.slot] = [];
-                }
-                grouped[lesson.day][lesson.slot].push(lesson);
+    <!-- Подключение модулей -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"
             }
-        });
-
-        const daysToRender = state.filterToday ? [todayIdx] : [1, 2, 3, 4, 5, 6, 7];
-        let html = '';
-
-        for (const d of daysToRender) {
-            const slots = grouped[d];
-            const dayName = DAY_NAMES[d-1];
-            const isToday = (d === todayIdx);
-            const dayClass = isToday ? 'day-card today' : 'day-card';
-            const dayDate = getDateByDayIndex(d);
-            const holidayDesc = getHolidayDescription(dayDate);
-            const dateStr = formatDate(dayDate);
-
-            html += `<div class="${dayClass}">`;
-            html += `<div class="day-header"><span>${dayName}, ${dateStr}</span>`;
-            if (isToday) html += `<span class="date-badge">Сегодня</span>`;
-            html += `</div><div class="lesson-list">`;
-
-            if (holidayDesc) {
-                html += `
-                    <div class="holiday-message">
-                        <span class="holiday-icon">🙂</span>
-                        <span class="holiday-text">${holidayDesc}</span>
-                    </div>
-                `;
-            } else {
-                let hasLessons = false;
-                for (let slotIdx = 0; slotIdx < TIME_SLOTS.length; slotIdx++) {
-                    if (slots[slotIdx] && slots[slotIdx].length > 0) {
-                        hasLessons = true;
-                        break;
-                    }
-                }
-
-                if (!hasLessons && state.filterToday && isToday) {
-                    html += `
-                        <div class="no-lessons" style="padding: 20px; text-align: center; color: var(--text-muted);">
-                            🎉 Сегодня занятий нет
-                        </div>
-                    `;
-                } else {
-                    for (let slotIdx = 0; slotIdx < TIME_SLOTS.length; slotIdx++) {
-                        const slot = TIME_SLOTS[slotIdx];
-                        const lessonsInSlot = slots[slotIdx];
-
-                        if (lessonsInSlot && lessonsInSlot.length > 0) {
-                            lessonsInSlot.forEach(lesson => {
-                                const timeDisplay = `${slot.start} – ${slot.end}`;
-                                const isCurrent = isToday && isTimeInSlot(currentTimeStr, slot);
-                                const currentClass = isCurrent ? 'lesson-item current' : 'lesson-item';
-
-                                html += `
-                                    <div class="${currentClass}">
-                                        <div class="lesson-time">${timeDisplay}</div>
-                                        <div class="lesson-info">
-                                            <div class="lesson-name">${lesson.name}</div>
-                                            <div class="lesson-meta">
-                                                <span><span class="icon">🏛️</span> ${lesson.room}</span>
-                                                <span><span class="icon">👨‍🏫</span> ${lesson.teacher}</span>
-                                            </div>
-                                        </div>
-                                        <button class="lesson-add-hw" data-day="${lesson.day}" data-subject="${lesson.name}" title="Добавить домашнее задание">➕</button>
-                                    </div>
-                                `;
-                            });
-                        } else {
-                            const emptyText = (slot.start === '10:00') ? '😴 Можно выспаться' : 'Нет пары';
-                            html += `
-                                <div class="lesson-item empty-slot">
-                                    <div class="lesson-time">${slot.start} – ${slot.end}</div>
-                                    <div class="lesson-info">
-                                        <div class="lesson-name" style="color: var(--text-empty); font-style: italic;">${emptyText}</div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    }
-                }
-            }
-            html += `</div></div>`;
         }
-
-        container.innerHTML = html;
-        updateNextLesson();
-
-        // Обработчики для кнопок "➕" (делегирование)
-        container.querySelectorAll('.lesson-add-hw').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const day = parseInt(this.dataset.day);
-                const subject = this.dataset.subject;
-                openHomeworkModal(day, subject);
-            });
-        });
-    }
-
-    // ========== 12. УПРАВЛЕНИЕ ВКЛАДКАМИ ==========
-
-    function switchTab(tab) {
-        state.activeTab = tab;
-        dom.mainTabs.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
-
-        if (tab === 'schedule') {
-            dom.scheduleControls.style.display = 'flex';
-            document.getElementById('scheduleContainer').style.display = 'flex';
-            dom.homeworksContainer.style.display = 'none';
-            dom.homeworksContainer.classList.remove('active');
-        } else {
-            dom.scheduleControls.style.display = 'none';
-            document.getElementById('scheduleContainer').style.display = 'none';
-            dom.homeworksContainer.style.display = 'block';
-            dom.homeworksContainer.classList.add('active');
-            renderHomeworks();
-        }
-    }
-
-    // ========== 13. ОБНОВЛЕНИЕ ИНТЕРФЕЙСА (кнопки, тема) ==========
-
-    function updateWeekButtons() {
-        dom.weekButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.week === state.currentWeek);
-        });
-    }
-
-    function updateFilterButton() {
-        const btn = dom.filterBtn;
-        if (state.filterToday) {
-            btn.textContent = '📌 Только сегодня';
-            btn.classList.add('active');
-        } else {
-            btn.textContent = '📅 Все дни';
-            btn.classList.remove('active');
-        }
-    }
-
-    function applyTheme(theme) {
-        document.body.classList.toggle('dark-theme', theme === 'dark');
-        dom.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-        state.theme = theme;
-    }
-
-    function toggleTheme() {
-        const newTheme = state.theme === 'light' ? 'dark' : 'light';
-        applyTheme(newTheme);
-        localStorage.setItem('theme', newTheme);
-    }
-
-    // ========== 14. ЗАГРУЗКА ДАННЫХ РАСПИСАНИЯ ==========
-
-    function loadData() {
-    const url = 'data.json?t=' + Date.now();
-    return fetch(url)
-        .then(response => {
-            if (!response.ok) throw new Error('Не удалось загрузить data.json');
-            return response.json();
-        })
-        .then(data => {
-            // Преобразуем новую структуру schedule в плоский массив lessons
-            if (data.schedule && Array.isArray(data.schedule)) {
-                const flatLessons = [];
-                data.schedule.forEach(day => {
-                    if (day.lessons && Array.isArray(day.lessons)) {
-                        day.lessons.forEach(lesson => {
-                            flatLessons.push({
-                                day: day.day,
-                                slot: lesson.slot,
-                                name: lesson.name,
-                                room: lesson.room,
-                                teacher: lesson.teacher,
-                                weekType: lesson.weekType,
-                                dateStart: lesson.dateStart || undefined
-                            });
-                        });
-                    }
-                });
-                data.lessons = flatLessons;
-            }
-            return data;
-        })
-        .catch(error => {
-            console.warn('Ошибка загрузки данных:', error);
-            return getFallbackData();
-        });
-	}
-
-    function getFallbackData() {
-        return {
-            timeSlots: [
-                { start: '10:00', end: '11:20' },
-                { start: '11:30', end: '12:50' },
-                { start: '13:00', end: '14:20' },
-                { start: '15:00', end: '16:20' },
-                { start: '16:30', end: '17:50' }
-            ],
-            holidays: [],
-            lessons: [],
-            startWeekReference: '2026-08-31'
-        };
-    }
-
-    // ========== 15. ОБРАБОТЧИКИ СОБЫТИЙ ==========
-
-    function initEventHandlers() {
-        // Вкладки
-        dom.mainTabs.forEach(btn => {
-            btn.addEventListener('click', function() {
-                switchTab(this.dataset.tab);
-            });
-        });
-
-        // Кнопки недель
-        dom.weekButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                state.currentWeek = this.dataset.week;
-                updateWeekButtons();
-                renderSchedule();
-            });
-        });
-
-        // Фильтр "Сегодня"
-        dom.filterBtn.addEventListener('click', function() {
-            state.filterToday = !state.filterToday;
-            localStorage.setItem('filterToday', state.filterToday ? 'true' : 'false');
-            updateFilterButton();
-            renderSchedule();
-        });
-
-        // Переключатель темы
-        dom.themeToggle.addEventListener('click', toggleTheme);
-
-        // Модальное окно ДЗ
-        dom.hwModalClose.addEventListener('click', closeHomeworkModal);
-        dom.hwModal.addEventListener('click', function(e) {
-            if (e.target === this) closeHomeworkModal();
-        });
-        dom.hwForm.addEventListener('submit', handleHomeworkSubmit);
-
-        // Экспорт / Импорт
-        dom.exportHwBtn.addEventListener('click', exportHomeworks);
-        dom.importHwBtn.addEventListener('click', importHomeworks);
-    }
-
-    // ========== 16. ИНИЦИАЛИЗАЦИЯ И ЗАПУСК ==========
-
-    async function init() {
-		//Для отладки
-		console.log("Версия 4 с домажкой и бд");
-        // Загружаем данные расписания
-        const data = await loadData();
-        TIME_SLOTS = data.timeSlots;
-        HOLIDAYS = data.holidays;
-        LESSONS_DATA = data.lessons;
-        START_WEEK_REFERENCE = new Date(data.startWeekReference);
-
-        // Определяем текущую неделю
-        state.currentWeek = getDefaultWeek();
-
-        // Подписка на ДЗ из Firestore
-        listenHomeworks((homeworks) => {
-            homeworksData = homeworks;
-            renderHomeworks();
-        });
-
-        // Запрос разрешения на уведомления
-        requestNotificationPermission();
-
-        // Восстановление состояния из localStorage
-        const savedFilter = localStorage.getItem('filterToday');
-        if (savedFilter === 'true') state.filterToday = true;
-        const savedTheme = localStorage.getItem('theme');
-        applyTheme(savedTheme || 'light');
-
-        // Обновляем кнопки
-        updateWeekButtons();
-        updateFilterButton();
-
-        // Первый рендер
-        renderSchedule();
-        updateCurrentLesson();
-
-        // Автообновление каждую секунду (текущая и следующая пара)
-        setInterval(() => {
-            updateCurrentLesson();
-            updateNextLesson();
-        }, 1000);
-
-        // Перерисовка расписания каждые 30 секунд
-        setInterval(() => {
-            renderSchedule();
-        }, 30000);
-
-        // Инициализация обработчиков событий
-        initEventHandlers();
-
-        // Показываем вкладку "Расписание" по умолчанию
-        switchTab('schedule');
-    }
-
-    // Запуск после загрузки DOM
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-
-})();
-</script>
+    </script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
