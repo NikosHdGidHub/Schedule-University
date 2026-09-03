@@ -45,6 +45,27 @@ let holidays = [];
 let lessons = [];
 let startRef = null;
 
+// Обновление кнопки "Сегодня"
+function updateFilterButton() {
+  const btn = dom.filterBtn;
+  if (state.filterToday) {
+    btn.textContent = '📌 Только сегодня';
+    btn.classList.add('active');
+  } else {
+    btn.textContent = '📅 Все дни';
+    btn.classList.remove('active');
+  }
+}
+
+// Обновление вкладок
+function updateTabs() {
+  dom.mainTabs.forEach(btn => {
+    const isActive = btn.dataset.tab === state.activeTab;
+    btn.classList.toggle('active', isActive);
+  });
+}
+
+
 // Инициализация
 async function init() {
     // Анонимный вход
@@ -89,6 +110,8 @@ async function init() {
   state.subscribe(() => {
     renderAll();
     updateWeekDisplay();
+    updateFilterButton(); // обновить текст/класс кнопки "Сегодня"
+    updateTabs();         // обновить активную вкладку
   });
 
   // Подписка на ДЗ
