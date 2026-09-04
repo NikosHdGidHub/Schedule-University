@@ -68,31 +68,14 @@ function updateTabs() {
 
 // Инициализация
 async function init() {
-    // Анонимный вход
-  try {
-    const userCredential = await loginAnonymously();
-    //console.log('Анонимный вход выполнен, uid:', userCredential.user.uid);
-  } catch (error) {
-    console.warn('Ошибка анонимного входа:', error);
-    // Можно показать сообщение, но приложение продолжит работать (только чтение)
-  }
-
-  // Подписка на изменения состояния аутентификации (опционально)
-  onAuthState((user) => {
-    if (user) {
-      console.log('Пользователь авторизован');
-    } else {
-      console.log('Пользователь не авторизован');
-    }
-  });
-  // Загружаем расписание
+  // 1. Сразу загружаем данные расписания (это самый важный блок)
   const data = await loadScheduleData();
   timeSlots = data.timeSlots;
   holidays = data.holidays;
   lessons = data.lessons;
   startRef = data.startWeekReference;
 
-  // Восстанавливаем состояние
+  // 2. Восстанавливаем тему и фильтр (быстро, из localStorage)
   const savedTheme = getSavedTheme();
   applyTheme(savedTheme);
   state.setTheme(savedTheme);
@@ -103,40 +86,64 @@ async function init() {
   const realWeek = getWeekNumber(startRef);
   state.setWeekNumber(realWeek);
 
-  // Обновляем отображение номера недели
-  updateWeekDisplay();
-
-  // Подписка на изменения состояния
+  // 3. Настраиваем подписку на изменения состояния (для переключения недель, фильтра и т.д.)
   state.subscribe(() => {
     renderAll();
     updateWeekDisplay();
-    updateFilterButton(); // обновить текст/класс кнопки "Сегодня"
-    updateTabs();         // обновить активную вкладку
+    updateFilterButton();
+    updateTabs();
   });
 
-  // Подписка на ДЗ
+  // 4. Первый рендер – страница готова мгновенно
+  renderAll();
+  // Принудительно показываем расписание, скрываем ДЗ
+  dom.scheduleContainer.style.display = 'flex';
+  dom.homeworksContainer.style.display = 'none';
+  dom.homeworksContainer.classList.remove('active');
+  updateTabs();
+  updateFilterButton();
+  updateWeekDisplay(); // ещё раз для надёжности
+
+  // 5. Запускаем обновление текущей/следующей пары (каждую секунду)
+  setInterval(() => {
+    renderCurrentLesson(dom.currentLessonContent, timeSlots, lessons, holidays, startRef);
+    renderNextLesson(dom.nextLessonContent, timeSlots, lessons, holidays, startRef);
+  }, 1000);
+
+  // 6. Запрашиваем разрешение на уведомления
+  requestNotificationPermission();
+
+  // 6. Планируем уведомления (без ДЗ, но это не критично)
+  scheduleNotifications();
+  setInterval(scheduleNotifications, 60000);
+
+  // 7. Теперь в фоне запускаем всё, что может тормозить: авторизация, Firestore, уведомления
+  // Анонимный вход – не ждём, ошибки логируем в консоль
+  loginAnonymously()
+    .then(userCredential => {
+      // console.log('Анонимный вход выполнен, uid:', userCredential.user.uid);
+    })
+    .catch(error => {
+      console.warn('Ошибка анонимного входа:', error);
+    });
+
+  // Подписка на состояние аутентификации (опционально)
+  onAuthState((user) => {
+    if (user) {
+      console.log('Пользователь авторизован');
+    } else {
+      console.log('Пользователь не авторизован');
+    }
+  });
+
+  // Подписка на ДЗ – загружается асинхронно, не блокирует рендер
   listenHomeworks((hw) => {
     renderHomeworks(dom.hwList, hw, handleToggleDone, handleDeleteHomework);
   });
 
-  // Запрашиваем разрешение на уведомления
-  requestNotificationPermission();
+  
 
-  // Первый рендер
-  renderAll();
-
-  // Запускаем обновление текущей/следующей пары каждую секунду
-  setInterval(() => {
-    renderCurrentLesson(dom.currentLessonContent, timeSlots, lessons, holidays, startRef);
-    renderNextLesson(dom.nextLessonContent, timeSlots, lessons, holidays, startRef);
-    // Планирование уведомлений (не чаще 1 раза в минуту, но здесь вызываем редко)
-  }, 1000);
-
-  // Планируем уведомления при загрузке и затем раз в минуту (чтобы обновить таймер)
-  scheduleNotifications();
-  setInterval(scheduleNotifications, 60000);
-
-  // Обработчики событий
+  // Обработчики событий (кнопки, модалки и т.д.)
   attachEventHandlers();
 }
 

@@ -1,4 +1,4 @@
-import { getTodayIndex, getWeekNumber, getDateByDayIndex, getWeekType } from './dateHelpers.js';
+import { getTodayIndex, getWeekNumber, getDateByDayIndex, DAY_NAMES } from './dateHelpers.js';
 
 let notificationTimeout = null;
 let lastScheduledLessonId = null;
@@ -13,30 +13,59 @@ export function requestNotificationPermission() {
 }
 
 /**
- * Показать уведомление о скором начале пары
+ * Показать уведомление о скором начале пары со звуком и вибрацией
  */
 function showLessonNotification(lesson, startTime, dayName = 'сегодня') {
   if (Notification.permission !== 'granted') return;
-  new Notification(`⏰ Скоро начнётся: ${lesson.name} в ${startTime}`, {
+
+  // Вибрация (если поддерживается)
+  if (navigator.vibrate) {
+    navigator.vibrate([200, 100, 200]);
+  }
+
+  // Звук через Web Audio (короткий бульк)
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 800;
+    oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.2);
+  } catch (e) {
+    // Web Audio не поддерживается – игнорируем
+  }
+
+  // Уведомление
+  const notification = new Notification(`⏰ Скоро начнётся: ${lesson.name} в ${startTime}`, {
     body: `Преподаватель: ${lesson.teacher}\nАудитория: ${lesson.room}`,
     icon: '📚',
     silent: false,
     vibrate: [200, 100, 200],
+    requireInteraction: true,
   });
+
+  setTimeout(() => notification.close(), 10000);
 }
 
 /**
  * Планирует уведомление за 5 минут до ближайшего занятия
- * (вызывается при обновлении данных или раз в минуту)
  */
 export function scheduleNextLessonNotification(
   lessons,
   timeSlots,
   holidays,
   startRef,
-  filterFn // функция для фильтрации занятий по дате и неделе (из scheduleRenderer)
+  filterFn
 ) {
-  // Отменяем старый таймер, если есть
   if (notificationTimeout) {
     clearTimeout(notificationTimeout);
     notificationTimeout = null;
@@ -58,7 +87,7 @@ export function scheduleNextLessonNotification(
   });
   if (holiday) return;
 
-  // Получаем занятия на сегодня (с учётом недели)
+  // Занятия на сегодня
   const todayLessons = lessons
     .filter(l => filterFn(l, todayDate, realWeek))
     .filter(l => l.day === todayIdx)
@@ -67,7 +96,6 @@ export function scheduleNextLessonNotification(
   let foundLesson = null;
   let foundDay = todayIdx;
 
-  // Ищем первую пару, которая ещё не началась (старт >= текущего времени)
   for (const lesson of todayLessons) {
     const slot = timeSlots[lesson.slot];
     if (slot && slot.start >= currentTime) {
@@ -76,7 +104,6 @@ export function scheduleNextLessonNotification(
     }
   }
 
-  // Если сегодня нет будущих пар, ищем в следующие дни
   if (!foundLesson) {
     for (let offset = 1; offset <= 7; offset++) {
       let checkDay = todayIdx + offset;
@@ -94,10 +121,7 @@ export function scheduleNextLessonNotification(
     }
   }
 
-  if (!foundLesson) {
-    // Нет занятий – не планируем
-    return;
-  }
+  if (!foundLesson) return;
 
   const slot = timeSlots[foundLesson.slot];
   if (!slot) return;
@@ -112,25 +136,21 @@ export function scheduleNextLessonNotification(
   }
 
   const timeToStart = startDate.getTime() - now.getTime();
-  const notifyAt = timeToStart - 5 * 60 * 1000; // за 5 минут
+  const notifyAt = timeToStart - 5 * 60 * 1000;
 
   const lessonId = `${foundLesson.day}-${foundLesson.slot}-${foundLesson.name}`;
-  if (lessonId === lastScheduledLessonId) {
-    // Уже запланировано для этого урока
-    return;
-  }
+  if (lessonId === lastScheduledLessonId) return;
 
   lastScheduledLessonId = lessonId;
 
   if (notifyAt > 1000) {
     notificationTimeout = setTimeout(() => {
-      const dayName = foundDay === todayIdx ? 'сегодня' : `${DAY_NAMES[foundDay-1]}`;
+      const dayName = foundDay === todayIdx ? 'сегодня' : DAY_NAMES[foundDay-1];
       showLessonNotification(foundLesson, slot.start, dayName);
       lastScheduledLessonId = null;
       notificationTimeout = null;
     }, notifyAt);
   } else {
-    // Урок уже близко, уведомление не показываем (или можно показать сразу)
     lastScheduledLessonId = null;
   }
 }

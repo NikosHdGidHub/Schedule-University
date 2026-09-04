@@ -197,8 +197,11 @@ export function renderCurrentLesson(container, timeSlots, lessons, holidays, sta
     const month = String(dayDate.getMonth() + 1).padStart(2, '0');
     return h.date === `${day}.${month}`;
   });
+
+  const parentBlock = container.parentElement; // это #currentLessonBlock
+
   if (holiday) {
-    container.style.display = 'none';
+    if (parentBlock) parentBlock.style.display = 'none';
     return;
   }
 
@@ -212,11 +215,13 @@ export function renderCurrentLesson(container, timeSlots, lessons, holidays, sta
   });
 
   if (currentLessons.length === 0) {
-    container.style.display = 'none';
+    if (parentBlock) parentBlock.style.display = 'none';
     return;
   }
 
-  container.style.display = 'block';
+  // Показываем блок
+  if (parentBlock) parentBlock.style.display = 'block';
+
   let html = '<div class="current-lesson-label">🔴 Идёт сейчас</div>';
   currentLessons.forEach(lesson => {
     const slot = timeSlots[lesson.slot];
