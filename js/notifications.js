@@ -3,48 +3,34 @@ import { getTodayIndex, getWeekNumber, getDateByDayIndex, DAY_NAMES } from './da
 let notificationTimeout = null;
 let lastScheduledLessonId = null;
 
-/**
- * Запросить разрешение на уведомления
- */
 export function requestNotificationPermission() {
   if (!('Notification' in window)) return;
   if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
   Notification.requestPermission();
 }
 
-/**
- * Показать уведомление о скором начале пары со звуком и вибрацией
- */
 function showLessonNotification(lesson, startTime, dayName = 'сегодня') {
   if (Notification.permission !== 'granted') return;
 
-  // Вибрация (если поддерживается)
   if (navigator.vibrate) {
     navigator.vibrate([200, 100, 200]);
   }
 
-  // Звук через Web Audio (короткий бульк)
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-
     oscillator.type = 'sine';
     oscillator.frequency.value = 800;
     oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
-
     gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-
     oscillator.start(audioCtx.currentTime);
     oscillator.stop(audioCtx.currentTime + 0.2);
-  } catch (e) {
-    // Web Audio не поддерживается – игнорируем
-  }
+  } catch (e) {}
 
-  // Уведомление
   const notification = new Notification(`⏰ Скоро начнётся: ${lesson.name} в ${startTime}`, {
     body: `Преподаватель: ${lesson.teacher}\nАудитория: ${lesson.room}`,
     icon: '📚',
@@ -52,13 +38,9 @@ function showLessonNotification(lesson, startTime, dayName = 'сегодня') {
     vibrate: [200, 100, 200],
     requireInteraction: true,
   });
-
   setTimeout(() => notification.close(), 10000);
 }
 
-/**
- * Планирует уведомление за 5 минут до ближайшего занятия
- */
 export function scheduleNextLessonNotification(
   lessons,
   timeSlots,
@@ -78,7 +60,6 @@ export function scheduleNextLessonNotification(
   const realWeek = getWeekNumber(startRef, now);
   const todayDate = getDateByDayIndex(startRef, realWeek, todayIdx);
 
-  // Проверяем праздник
   const holiday = holidays.find(h => {
     const d = new Date(todayDate);
     const day = String(d.getDate()).padStart(2, '0');
@@ -87,7 +68,6 @@ export function scheduleNextLessonNotification(
   });
   if (holiday) return;
 
-  // Занятия на сегодня
   const todayLessons = lessons
     .filter(l => filterFn(l, todayDate, realWeek))
     .filter(l => l.day === todayIdx)
@@ -95,6 +75,7 @@ export function scheduleNextLessonNotification(
 
   let foundLesson = null;
   let foundDay = todayIdx;
+  let foundWeek = realWeek;
 
   for (const lesson of todayLessons) {
     const slot = timeSlots[lesson.slot];
@@ -106,16 +87,30 @@ export function scheduleNextLessonNotification(
 
   if (!foundLesson) {
     for (let offset = 1; offset <= 7; offset++) {
-      let checkDay = todayIdx + offset;
-      if (checkDay > 7) checkDay -= 7;
-      const checkDate = getDateByDayIndex(startRef, realWeek, checkDay);
+      const dayIndex = todayIdx + offset;
+      let weekNum = realWeek;
+      let day = dayIndex;
+      if (day > 7) {
+        day = day - 7;
+        weekNum = realWeek + 1;
+      }
+      const checkDate = getDateByDayIndex(startRef, weekNum, day);
+      const holidayCheck = holidays.find(h => {
+        const d = new Date(checkDate);
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        const monthStr = String(d.getMonth() + 1).padStart(2, '0');
+        return h.date === `${dayStr}.${monthStr}`;
+      });
+      if (holidayCheck) continue;
+
       const dayLessons = lessons
-        .filter(l => filterFn(l, checkDate, realWeek))
-        .filter(l => l.day === checkDay)
+        .filter(l => filterFn(l, checkDate, weekNum))
+        .filter(l => l.day === day)
         .sort((a, b) => a.slot - b.slot);
       if (dayLessons.length > 0) {
         foundLesson = dayLessons[0];
-        foundDay = checkDay;
+        foundDay = day;
+        foundWeek = weekNum;
         break;
       }
     }
@@ -129,10 +124,9 @@ export function scheduleNextLessonNotification(
   const [h, m] = slot.start.split(':').map(Number);
   const startDate = new Date(now);
   startDate.setHours(h, m, 0, 0);
-  if (foundDay !== todayIdx) {
-    let diff = foundDay - todayIdx;
-    if (diff < 0) diff += 7;
-    startDate.setDate(startDate.getDate() + diff);
+  const daysDiff = (foundWeek - realWeek) * 7 + (foundDay - todayIdx);
+  if (daysDiff > 0) {
+    startDate.setDate(startDate.getDate() + daysDiff);
   }
 
   const timeToStart = startDate.getTime() - now.getTime();
@@ -145,7 +139,7 @@ export function scheduleNextLessonNotification(
 
   if (notifyAt > 1000) {
     notificationTimeout = setTimeout(() => {
-      const dayName = foundDay === todayIdx ? 'сегодня' : DAY_NAMES[foundDay-1];
+      const dayName = (daysDiff > 0) ? DAY_NAMES[foundDay-1] : 'сегодня';
       showLessonNotification(foundLesson, slot.start, dayName);
       lastScheduledLessonId = null;
       notificationTimeout = null;

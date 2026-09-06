@@ -65,7 +65,7 @@ export function renderSchedule(
   lessons,
   holidays,
   startRef,
-  onAddHomework // колбэк для открытия модалки ДЗ
+  onAddHomework
 ) {
   const now = new Date();
   const currentTime = now.toTimeString().slice(0, 5);
@@ -73,7 +73,6 @@ export function renderSchedule(
 
   const displayWeek = state.filterToday ? getWeekNumber(startRef, now) : state.weekNumber;
 
-  // Группируем занятия по дням и слотам
   const grouped = {};
   for (let d = 1; d <= 7; d++) {
     grouped[d] = new Array(timeSlots.length).fill(null);
@@ -170,7 +169,6 @@ export function renderSchedule(
 
   container.innerHTML = html;
 
-  // Вешаем обработчики на кнопки "+"
   container.querySelectorAll('.lesson-add-hw').forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -191,14 +189,13 @@ export function renderCurrentLesson(container, timeSlots, lessons, holidays, sta
   const realWeek = getWeekNumber(startRef, now);
   const dayDate = getDateByDayIndex(startRef, realWeek, todayIdx);
 
-  // Проверка праздника
   const holiday = holidays.find(h => {
     const day = String(dayDate.getDate()).padStart(2, '0');
     const month = String(dayDate.getMonth() + 1).padStart(2, '0');
     return h.date === `${day}.${month}`;
   });
 
-  const parentBlock = container.parentElement; // это #currentLessonBlock
+  const parentBlock = container.parentElement;
 
   if (holiday) {
     if (parentBlock) parentBlock.style.display = 'none';
@@ -219,7 +216,6 @@ export function renderCurrentLesson(container, timeSlots, lessons, holidays, sta
     return;
   }
 
-  // Показываем блок
   if (parentBlock) parentBlock.style.display = 'block';
 
   let html = '<div class="current-lesson-label">🔴 Идёт сейчас</div>';
@@ -264,12 +260,14 @@ export function renderNextLesson(container, timeSlots, lessons, holidays, startR
     return;
   }
 
+  // Занятия на сегодня
   const todayLessons = lessons
     .filter(l => l.day === todayIdx && filterLessonsForDay(l, todayDate, realWeek, holidays))
     .sort((a, b) => a.slot - b.slot);
 
   let nextLesson = null;
   let targetDay = todayIdx;
+  let targetWeek = realWeek;
 
   // Ищем будущую пару сегодня
   for (const lesson of todayLessons) {
@@ -280,18 +278,34 @@ export function renderNextLesson(container, timeSlots, lessons, holidays, startR
     }
   }
 
-  // Если нет, ищем в следующие дни
+  // Если нет, ищем в следующие дни (до 7 дней вперёд)
   if (!nextLesson) {
     for (let offset = 1; offset <= 7; offset++) {
-      let checkDay = todayIdx + offset;
-      if (checkDay > 7) checkDay -= 7;
-      const checkDate = getDateByDayIndex(startRef, realWeek, checkDay);
+      const dayIndex = todayIdx + offset;
+      let weekNum = realWeek;
+      let day = dayIndex;
+      if (day > 7) {
+        day = day - 7;
+        weekNum = realWeek + 1;
+      }
+      // Если offset > 7 не рассматриваем
+      const checkDate = getDateByDayIndex(startRef, weekNum, day);
+      // Проверяем праздник
+      const holidayCheck = holidays.find(h => {
+        const d = new Date(checkDate);
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        const monthStr = String(d.getMonth() + 1).padStart(2, '0');
+        return h.date === `${dayStr}.${monthStr}`;
+      });
+      if (holidayCheck) continue;
+
       const dayLessons = lessons
-        .filter(l => l.day === checkDay && filterLessonsForDay(l, checkDate, realWeek, holidays))
+        .filter(l => l.day === day && filterLessonsForDay(l, checkDate, weekNum, holidays))
         .sort((a, b) => a.slot - b.slot);
       if (dayLessons.length > 0) {
         nextLesson = dayLessons[0];
-        targetDay = checkDay;
+        targetDay = day;
+        targetWeek = weekNum;
         break;
       }
     }
@@ -308,18 +322,19 @@ export function renderNextLesson(container, timeSlots, lessons, holidays, startR
     return;
   }
 
+  // Вычисляем время начала
   const [h, m] = slot.start.split(':').map(Number);
   const startDate = new Date(now);
   startDate.setHours(h, m, 0, 0);
-  if (targetDay !== todayIdx) {
-    let diff = targetDay - todayIdx;
-    if (diff < 0) diff += 7;
-    startDate.setDate(startDate.getDate() + diff);
+  // Корректируем день и неделю
+  const daysDiff = (targetWeek - realWeek) * 7 + (targetDay - todayIdx);
+  if (daysDiff > 0) {
+    startDate.setDate(startDate.getDate() + daysDiff);
   }
 
   const countdown = getTimeRemaining(startDate);
   const isUrgent = (startDate - now <= 600000 && startDate - now > 0);
-  const dayPrefix = targetDay !== todayIdx ? ` (${DAY_NAMES[targetDay-1]})` : '';
+  const dayPrefix = (daysDiff > 0) ? ` (${DAY_NAMES[targetDay-1]})` : '';
 
   container.innerHTML = `
     <div class="main-info">

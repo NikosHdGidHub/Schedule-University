@@ -1,0 +1,74 @@
+[
+  {
+    "id": "1VU4JF9gkIul84G71LWP",
+    "createdAt": {
+      "seconds": 1788340604,
+      "nanoseconds": 756000000
+    },
+    "done": false,
+    "description": "Учебник для курса Основы православной антропологии прот. Вадим Леонов",
+    "deadline": "",
+    "day": 3,
+    "subject": "Православная антропология"
+  },
+  {
+    "id": "3FzVxt17zIpBjbiOcn3u",
+    "description": "Платон, миф о пещере",
+    "subject": "Психология развития и возрастная психология",
+    "deadline": "2026-09-09",
+    "createdAt": {
+      "seconds": 1788352028,
+      "nanoseconds": 611000000
+    },
+    "day": 3,
+    "done": false
+  },
+  {
+    "id": "aVUrB0gys8MxkUMISk31",
+    "day": 5,
+    "createdAt": {
+      "seconds": 1788533224,
+      "nanoseconds": 775000000
+    },
+    "deadline": "2026-09-11",
+    "done": false,
+    "subject": "Общая психология (психология личности)",
+    "description": "Написать эссе на тему что такое быть личностью."
+  },
+  {
+    "id": "keWxhJBooOEcfqJ3C9hr",
+    "subject": "Анатомия и физиология ЦНС и сенсорных систем",
+    "day": 4,
+    "createdAt": {
+      "seconds": 1788517073,
+      "nanoseconds": 623000000
+    },
+    "done": false,
+    "description": "Домашнее задание на 10.09. \n1. Сделать иллюстрацию нейрона и поперечного среза спинного мозга. \n2. Повторить конспект. \n3. Ответить на вопрос кратко: Как формируется нервная система у человека в эмбриогенезе?",
+    "deadline": "2026-09-10"
+  },
+  {
+    "id": "nbbxV3KOUowY5Xdo7un8",
+    "deadline": "",
+    "day": 5,
+    "done": false,
+    "description": "Учебник, Маклаков А.Г. м15 общая психология 2008",
+    "createdAt": {
+      "seconds": 1788528973,
+      "nanoseconds": 689000000
+    },
+    "subject": "Общая психология (психология личности)"
+  },
+  {
+    "id": "yWSlvZClekSawd123qmt",
+    "deadline": "",
+    "done": false,
+    "createdAt": {
+      "seconds": 1788516664,
+      "nanoseconds": 999000000
+    },
+    "day": 5,
+    "subject": "Экспериментальная психология",
+    "description": "Учебник Корнилова"
+  }
+]

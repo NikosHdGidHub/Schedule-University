@@ -5,7 +5,7 @@ import { renderSchedule, renderCurrentLesson, renderNextLesson, filterLessonsFor
 import { renderHomeworks } from './homeworksRenderer.js';
 import { scheduleNextLessonNotification, requestNotificationPermission } from './notifications.js';
 import { applyTheme, getSavedTheme } from './theme.js';
-import { getWeekNumber, getWeekStartDate, formatDateShort } from './dateHelpers.js';
+import { getWeekNumber, getWeekStartDate, formatDateShort, getTodayIndex } from './dateHelpers.js';
 import { auth, loginAnonymously, onAuthState } from './firebaseConfig.js';
 
 // DOM-элементы
@@ -65,17 +65,16 @@ function updateTabs() {
   });
 }
 
-
 // Инициализация
 async function init() {
-  // 1. Сразу загружаем данные расписания (это самый важный блок)
+  // 1. Сразу загружаем данные расписания
   const data = await loadScheduleData();
   timeSlots = data.timeSlots;
   holidays = data.holidays;
   lessons = data.lessons;
   startRef = data.startWeekReference;
 
-  // 2. Восстанавливаем тему и фильтр (быстро, из localStorage)
+  // 2. Восстанавливаем тему и фильтр
   const savedTheme = getSavedTheme();
   applyTheme(savedTheme);
   state.setTheme(savedTheme);
@@ -84,9 +83,17 @@ async function init() {
   if (savedFilter === 'true') state.toggleFilterToday();
 
   const realWeek = getWeekNumber(startRef);
-  state.setWeekNumber(realWeek);
+  const todayIdx = getTodayIndex();
 
-  // 3. Настраиваем подписку на изменения состояния (для переключения недель, фильтра и т.д.)
+  // Определяем начальную неделю:
+  // если сегодня воскресенье и фильтр "Сегодня" не включён → показываем следующую неделю
+  let initialWeek = realWeek;
+  if (todayIdx === 7 && !state.filterToday) {
+    initialWeek = realWeek + 1;
+  }
+  state.setWeekNumber(initialWeek);
+
+  // 3. Подписка на изменения состояния
   state.subscribe(() => {
     renderAll();
     updateWeekDisplay();
@@ -94,31 +101,27 @@ async function init() {
     updateTabs();
   });
 
-  // 4. Первый рендер – страница готова мгновенно
+  // 4. Первый рендер
   renderAll();
-  // Принудительно показываем расписание, скрываем ДЗ
   dom.scheduleContainer.style.display = 'flex';
   dom.homeworksContainer.style.display = 'none';
   dom.homeworksContainer.classList.remove('active');
   updateTabs();
   updateFilterButton();
-  updateWeekDisplay(); // ещё раз для надёжности
+  updateWeekDisplay();
 
-  // 5. Запускаем обновление текущей/следующей пары (каждую секунду)
+  // 5. Обновление текущей/следующей пары (каждую секунду)
   setInterval(() => {
     renderCurrentLesson(dom.currentLessonContent, timeSlots, lessons, holidays, startRef);
     renderNextLesson(dom.nextLessonContent, timeSlots, lessons, holidays, startRef);
   }, 1000);
 
-  // 6. Запрашиваем разрешение на уведомления
+  // 6. Уведомления
   requestNotificationPermission();
-
-  // 6. Планируем уведомления (без ДЗ, но это не критично)
   scheduleNotifications();
   setInterval(scheduleNotifications, 60000);
 
-  // 7. Теперь в фоне запускаем всё, что может тормозить: авторизация, Firestore, уведомления
-  // Анонимный вход – не ждём, ошибки логируем в консоль
+  // 7. Фоновые задачи (авторизация, Firestore)
   loginAnonymously()
     .then(userCredential => {
       // console.log('Анонимный вход выполнен, uid:', userCredential.user.uid);
@@ -127,7 +130,6 @@ async function init() {
       console.warn('Ошибка анонимного входа:', error);
     });
 
-  // Подписка на состояние аутентификации (опционально)
   onAuthState((user) => {
     if (user) {
       console.log('Пользователь авторизован');
@@ -136,14 +138,10 @@ async function init() {
     }
   });
 
-  // Подписка на ДЗ – загружается асинхронно, не блокирует рендер
   listenHomeworks((hw) => {
     renderHomeworks(dom.hwList, hw, handleToggleDone, handleDeleteHomework);
   });
 
-  
-
-  // Обработчики событий (кнопки, модалки и т.д.)
   attachEventHandlers();
 }
 
@@ -182,7 +180,6 @@ function scheduleNotifications() {
     holidays,
     startRef,
     (lesson, date, weekNum) => {
-      // Используем ту же логику, что в filterLessonsForDay
       return filterLessonsForDay(lesson, date, weekNum, holidays);
     }
   );
@@ -212,7 +209,18 @@ function attachEventHandlers() {
   dom.filterBtn.addEventListener('click', function() {
     state.toggleFilterToday();
     localStorage.setItem('filterToday', state.filterToday ? 'true' : 'false');
-    // Кнопка обновляется при вызове renderAll через подписку
+
+    // Корректируем неделю при переключении фильтра
+    const realWeek = getWeekNumber(startRef);
+    const todayIdx = getTodayIndex();
+    if (!state.filterToday && todayIdx === 7) {
+      // Фильтр выключен, сегодня воскресенье → показываем следующую неделю
+      state.setWeekNumber(realWeek + 1);
+    } else if (state.filterToday) {
+      // Фильтр включён → возвращаемся на реальную неделю
+      state.setWeekNumber(realWeek);
+    }
+    // Кнопка обновится через подписку
   });
 
   // Тема
@@ -292,7 +300,7 @@ async function handleHomeworkSubmit(e) {
   closeHomeworkModal();
 }
 
-// Обработчики для ДЗ (чекбокс и удаление)
+// Обработчики для ДЗ
 async function handleToggleDone(id) {
   const hw = getHomeworksData().find(h => h.id === id);
   if (hw) await toggleHomeworkDone(id, hw.done);
