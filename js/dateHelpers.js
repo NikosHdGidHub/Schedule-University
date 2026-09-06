@@ -12,9 +12,15 @@ export function getTodayIndex() {
 
 /**
  * Вычислить номер недели относительно опорного понедельника
+ * (без учёта времени суток – только дни)
  */
 export function getWeekNumber(startRef, date = new Date()) {
-  const diff = Math.floor((date - startRef) / (7 * 24 * 60 * 60 * 1000));
+  // Приводим даты к началу дня (локальное время)
+  const start = new Date(startRef);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(date);
+  end.setHours(0, 0, 0, 0);
+  const diff = Math.floor((end - start) / (7 * 24 * 60 * 60 * 1000));
   return diff + 1;
 }
 
