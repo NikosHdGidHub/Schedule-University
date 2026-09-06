@@ -1,4 +1,4 @@
-import { db } from './firebaseConfig.js'; // Firebase конфиг вынесен отдельно
+import { db } from './firebaseConfig.js';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 // Загрузка расписания из data.json
@@ -31,10 +31,14 @@ export async function loadScheduleData() {
       lessons = data.lessons;
     }
 
+    // Сохраняем temp_schedule
+    const tempSchedule = data.temp_schedule || [];
+
     return {
       timeSlots: data.timeSlots,
       holidays: data.holidays || [],
-      lessons,
+      lessons,               // базовые занятия
+      tempSchedule,          // временные изменения
       startWeekReference: new Date(data.startWeekReference),
     };
   } catch (error) {
@@ -54,9 +58,11 @@ function getFallbackData() {
     ],
     holidays: [],
     lessons: [],
+    tempSchedule: [],
     startWeekReference: new Date('2026-08-31'),
   };
 }
+
 
 // ---------- Работа с Firestore (ДЗ) ----------
 

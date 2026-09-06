@@ -44,6 +44,7 @@ let timeSlots = [];
 let holidays = [];
 let lessons = [];
 let startRef = null;
+let tempSchedule = []; 
 
 // Обновление кнопки "Сегодня"
 function updateFilterButton() {
@@ -67,12 +68,14 @@ function updateTabs() {
 
 // Инициализация
 async function init() {
+  console.log("Версия 8.0 - дополнительные занятия")
   // 1. Сразу загружаем данные расписания
   const data = await loadScheduleData();
   timeSlots = data.timeSlots;
   holidays = data.holidays;
   lessons = data.lessons;
   startRef = data.startWeekReference;
+  tempSchedule = data.tempSchedule;
 
   // 2. Восстанавливаем тему и фильтр
   const savedTheme = getSavedTheme();
@@ -100,6 +103,7 @@ async function init() {
     updateFilterButton();
     updateTabs();
   });
+  
 
   // 4. Первый рендер
   renderAll();
@@ -112,8 +116,8 @@ async function init() {
 
   // 5. Обновление текущей/следующей пары (каждую секунду)
   setInterval(() => {
-    renderCurrentLesson(dom.currentLessonContent, timeSlots, lessons, holidays, startRef);
-    renderNextLesson(dom.nextLessonContent, timeSlots, lessons, holidays, startRef);
+    renderCurrentLesson(dom.currentLessonContent, timeSlots, lessons, holidays, startRef, tempSchedule);
+    renderNextLesson(dom.nextLessonContent, timeSlots, lessons, holidays, startRef, tempSchedule);
   }, 1000);
 
   // 6. Уведомления
@@ -154,11 +158,12 @@ function renderAll() {
     lessons,
     holidays,
     startRef,
+    tempSchedule,
     (day, subject) => openHomeworkModal(day, subject)
   );
-  renderCurrentLesson(dom.currentLessonContent, timeSlots, lessons, holidays, startRef);
-  renderNextLesson(dom.nextLessonContent, timeSlots, lessons, holidays, startRef);
-}
+  renderCurrentLesson(dom.currentLessonContent, timeSlots, lessons, holidays, startRef, tempSchedule);
+  renderNextLesson(dom.nextLessonContent, timeSlots, lessons, holidays, startRef, tempSchedule);
+} 
 
 // Обновление отображения недели
 function updateWeekDisplay() {
