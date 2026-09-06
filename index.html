@@ -635,6 +635,37 @@
             .week-nav-btn { padding: 6px 16px; font-size: 0.9rem; }
             .week-info { min-width: 120px; font-size: 1rem; }
         }
+        /* ===== Footer ===== */
+		.app-footer {
+		margin-top: 40px;
+		padding: 20px 0 10px;
+		text-align: center;
+		border-top: 1px solid var(--border-light);
+		color: var(--text-secondary);
+		font-size: 0.95rem;
+		transition: border-color 0.3s, color 0.3s;
+		}
+		.app-footer a {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		color: var(--text-primary);
+		text-decoration: none;
+		font-weight: 500;
+		padding: 6px 14px;
+		border-radius: 30px;
+		background: var(--bg-card);
+		border: 1px solid var(--border-btn);
+		transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+		}
+		.app-footer a:hover {
+		background: var(--bg-btn-hover);
+		border-color: var(--border-today);
+		box-shadow: var(--shadow-card);
+		}
+		.app-footer a .icon {
+		font-size: 1.2rem;
+		}
     </style>
 </head>
 <body>
@@ -711,7 +742,12 @@
             </form>
         </div>
     </div>
-
+	 <!-- Подвал с ссылкой на Google Диск -->
+    <footer class="app-footer">
+        <a href="https://drive.google.com/drive/folders/10vLL6TsxQ32Ns-OY5kUbP8wpta7-eNnu?usp=sharing" target="_blank" rel="noopener noreferrer">
+            <span class="icon">📁</span> Файлы на Google Диске
+        </a>
+    </footer>
     <!-- Подключение модулей -->
     <script type="importmap">
         {
