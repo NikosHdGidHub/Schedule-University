@@ -19,7 +19,7 @@
     { "date": "07.09", "description": "7 - сказали выходной :)" },
     { "date": "31.08", "description": "Не учимся" }
   ],
-  "startWeekReference": "2026-08-31",
+  "startWeekReference": "2026-09-07",
   "schedule": [
     {
       "day": 1,
