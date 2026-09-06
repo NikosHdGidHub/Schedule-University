@@ -86,5 +86,15 @@
         { "slot": 2, "name": "История Русской Православной Церкви", "room": "315", "teacher": "прот. Владислав Цыпин", "weekType": "both" }
       ]
     }
+  ],
+  "temp_schedule":[
+    {
+      "date": "13.09.25",
+      "lessons": [
+        { "slot": 0, "name": "Замена (русский язык)", "room": "555", "teacher": "Татьяна","todo":"replace" },
+        { "slot": 3, "name": "Замена (русский язык)", "room": "555", "teacher": "Татьяна","todo":"replace" },
+        { "slot": 2, "todo":"delete" }
+      ]
+    }
   ]
 }
