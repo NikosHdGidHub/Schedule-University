@@ -1,7 +1,10 @@
-import { getTodayIndex, getWeekNumber, getDateByDayIndex, DAY_NAMES } from './dateHelpers.js';
+import { getTodayIndex, getWeekNumber, getDateByDayIndex } from './dateHelpers.js';
 
-let notificationTimeout = null;
-let lastScheduledLessonId = null;
+const START_NOTIFY_BEFORE_MS = 5 * 60 * 1000;   // за 5 минут до начала
+const END_NOTIFY_BEFORE_MS   = 10 * 60 * 1000;  // за 10 минут до конца
+
+// Хранилище запланированных уведомлений: ключ -> id таймера
+const scheduledTimeouts = new Map();
 
 export function requestNotificationPermission() {
   if (!('Notification' in window)) return;
@@ -9,13 +12,8 @@ export function requestNotificationPermission() {
   Notification.requestPermission();
 }
 
-function showLessonNotification(lesson, startTime, dayName = 'сегодня') {
-  if (Notification.permission !== 'granted') return;
-
-  if (navigator.vibrate) {
-    navigator.vibrate([200, 100, 200]);
-  }
-
+function playSignal() {
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioCtx.createOscillator();
@@ -30,9 +28,13 @@ function showLessonNotification(lesson, startTime, dayName = 'сегодня') {
     oscillator.start(audioCtx.currentTime);
     oscillator.stop(audioCtx.currentTime + 0.2);
   } catch (e) {}
+}
 
-  const notification = new Notification(`⏰ Скоро начнётся: ${lesson.name} в ${startTime}`, {
-    body: `Преподаватель: ${lesson.teacher}\nАудитория: ${lesson.room}`,
+function showNotification(title, body) {
+  if (Notification.permission !== 'granted') return;
+  playSignal();
+  const notification = new Notification(title, {
+    body,
     icon: '📚',
     silent: false,
     vibrate: [200, 100, 200],
@@ -41,6 +43,25 @@ function showLessonNotification(lesson, startTime, dayName = 'сегодня') {
   setTimeout(() => notification.close(), 10000);
 }
 
+/**
+ * Планирует уведомление ровно один раз. Если ключ уже в Map — выходим.
+ * Никакие ранее установленные таймеры не отменяются.
+ */
+function scheduleNotificationOnce(key, delayMs, title, body) {
+  if (scheduledTimeouts.has(key)) return;   // уже запланировано — не трогаем
+  if (delayMs <= 0) return;                 // момент уже прошёл — нечего планировать
+  const id = setTimeout(() => {
+    scheduledTimeouts.delete(key);
+    showNotification(title, body);
+  }, delayMs);
+  scheduledTimeouts.set(key, id);
+}
+
+/**
+ * Основная функция. Вызывается регулярно (раз в минуту).
+ * Идемпотентна: повторные вызовы не отменяют уже запланированные уведомления,
+ * а только добавляют новые (например, для только что появившейся пары).
+ */
 export function scheduleNextLessonNotification(
   lessons,
   timeSlots,
@@ -48,24 +69,15 @@ export function scheduleNextLessonNotification(
   startRef,
   filterFn
 ) {
-  if (notificationTimeout) {
-    clearTimeout(notificationTimeout);
-    notificationTimeout = null;
-    lastScheduledLessonId = null;
-  }
-
   const now = new Date();
-  const currentTime = now.toTimeString().slice(0, 5);
   const todayIdx = getTodayIndex();
   const realWeek = getWeekNumber(startRef, now);
   const todayDate = getDateByDayIndex(startRef, realWeek, todayIdx);
 
-  const holiday = holidays.find(h => {
-    const d = new Date(todayDate);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    return h.date === `${day}.${month}`;
-  });
+  // Проверка праздника
+  const dayStr = String(todayDate.getDate()).padStart(2, '0');
+  const monthStr = String(todayDate.getMonth() + 1).padStart(2, '0');
+  const holiday = holidays.find(h => h.date === `${dayStr}.${monthStr}`);
   if (holiday) return;
 
   const todayLessons = lessons
@@ -73,78 +85,44 @@ export function scheduleNextLessonNotification(
     .filter(l => l.day === todayIdx)
     .sort((a, b) => a.slot - b.slot);
 
-  let foundLesson = null;
-  let foundDay = todayIdx;
-  let foundWeek = realWeek;
+  const dateKey = `${todayDate.getFullYear()}-${todayDate.getMonth() + 1}-${todayDate.getDate()}`;
 
-  for (const lesson of todayLessons) {
+  // Чистим таймеры за прошлые дни (актуально, если вкладка открыта сутками)
+  for (const key of [...scheduledTimeouts.keys()]) {
+    if (!key.startsWith(dateKey + '-')) {
+      clearTimeout(scheduledTimeouts.get(key));
+      scheduledTimeouts.delete(key);
+    }
+  }
+
+  todayLessons.forEach(lesson => {
     const slot = timeSlots[lesson.slot];
-    if (slot && slot.start >= currentTime) {
-      foundLesson = lesson;
-      break;
-    }
-  }
+    if (!slot) return;
 
-  if (!foundLesson) {
-    for (let offset = 1; offset <= 7; offset++) {
-      const dayIndex = todayIdx + offset;
-      let weekNum = realWeek;
-      let day = dayIndex;
-      if (day > 7) {
-        day = day - 7;
-        weekNum = realWeek + 1;
-      }
-      const checkDate = getDateByDayIndex(startRef, weekNum, day);
-      const holidayCheck = holidays.find(h => {
-        const d = new Date(checkDate);
-        const dayStr = String(d.getDate()).padStart(2, '0');
-        const monthStr = String(d.getMonth() + 1).padStart(2, '0');
-        return h.date === `${dayStr}.${monthStr}`;
-      });
-      if (holidayCheck) continue;
+    // ---------- Уведомление о начале пары (за 5 минут) ----------
+    const [sh, sm] = slot.start.split(':').map(Number);
+    const startDate = new Date(now);
+    startDate.setHours(sh, sm, 0, 0);
+    const startDelay = startDate.getTime() - now.getTime() - START_NOTIFY_BEFORE_MS;
+    const startKey = `${dateKey}-s${lesson.slot}-start`;
+    scheduleNotificationOnce(
+      startKey,
+      startDelay,
+      `⏰ Через 5 минут: ${lesson.name}`,
+      `Начало в ${slot.start}\nПреподаватель: ${lesson.teacher}\nАудитория: ${lesson.room}`
+    );
 
-      const dayLessons = lessons
-        .filter(l => filterFn(l, checkDate, weekNum))
-        .filter(l => l.day === day)
-        .sort((a, b) => a.slot - b.slot);
-      if (dayLessons.length > 0) {
-        foundLesson = dayLessons[0];
-        foundDay = day;
-        foundWeek = weekNum;
-        break;
-      }
-    }
-  }
-
-  if (!foundLesson) return;
-
-  const slot = timeSlots[foundLesson.slot];
-  if (!slot) return;
-
-  const [h, m] = slot.start.split(':').map(Number);
-  const startDate = new Date(now);
-  startDate.setHours(h, m, 0, 0);
-  const daysDiff = (foundWeek - realWeek) * 7 + (foundDay - todayIdx);
-  if (daysDiff > 0) {
-    startDate.setDate(startDate.getDate() + daysDiff);
-  }
-
-  const timeToStart = startDate.getTime() - now.getTime();
-  const notifyAt = timeToStart - 5 * 60 * 1000;
-
-  const lessonId = `${foundLesson.day}-${foundLesson.slot}-${foundLesson.name}`;
-  if (lessonId === lastScheduledLessonId) return;
-
-  lastScheduledLessonId = lessonId;
-
-  if (notifyAt > 1000) {
-    notificationTimeout = setTimeout(() => {
-      const dayName = (daysDiff > 0) ? DAY_NAMES[foundDay-1] : 'сегодня';
-      showLessonNotification(foundLesson, slot.start, dayName);
-      lastScheduledLessonId = null;
-      notificationTimeout = null;
-    }, notifyAt);
-  } else {
-    lastScheduledLessonId = null;
-  }
+    // ---------- Уведомление о конце пары (за 10 минут) ----------
+    const [eh, em] = slot.end.split(':').map(Number);
+    const endDate = new Date(now);
+    endDate.setHours(eh, em, 0, 0);
+    const endDelay = endDate.getTime() - now.getTime() - END_NOTIFY_BEFORE_MS;
+    const endKey = `${dateKey}-s${lesson.slot}-end`;
+    scheduleNotificationOnce(
+      endKey,
+      endDelay,
+      `⏳ Скоро конец: ${lesson.name}`,
+      `Конец в ${slot.end}\nПреподаватель: ${lesson.teacher}\nАудитория: ${lesson.room}`
+    );
+  });
 }

@@ -101,7 +101,12 @@ export function getLessonsForDate(dayIndex, date, weekNumber, holidays, baseLess
     correction.lessons.forEach(corr => {
       const slot = corr.slot;
       if (corr.todo === 'delete') {
-        delete slotMap[slot];
+        // Помечаем слот как отменённый
+        slotMap[slot] = [{
+          day: dayIndex,
+          slot: slot,
+          isCancelled: true
+        }];
       } else if (corr.todo === 'replace') {
         const newLesson = {
           day: dayIndex,
@@ -183,26 +188,37 @@ export function renderSchedule(
         // Находим все занятия в этом слоте
         const lessonsInSlot = dayLessons.filter(l => l.slot === slotIdx);
         if (lessonsInSlot.length > 0) {
-          lessonsInSlot.forEach(lesson => {
-            const timeDisplay = `${slot.start} – ${slot.end}`;
-            const isCurrent = isToday && currentTime >= slot.start && currentTime <= slot.end;
-            const currentClass = isCurrent ? 'lesson-item current' : 'lesson-item';
-            // Если это замена, можно добавить пометку
-            const replacementBadge = lesson.isReplacement ? ' 🔄' : '';
+          // Проверяем, не отменён ли слот
+          if (lessonsInSlot.length === 1 && lessonsInSlot[0].isCancelled) {
             html += `
-              <div class="${currentClass}">
-                <div class="lesson-time">${timeDisplay}</div>
+              <div class="lesson-item empty-slot">
+                <div class="lesson-time">${slot.start} – ${slot.end}</div>
                 <div class="lesson-info">
-                  <div class="lesson-name">${lesson.name}${replacementBadge}</div>
-                  <div class="lesson-meta">
-                    <span><span class="icon">🏛️</span> ${lesson.room}</span>
-                    <span><span class="icon">👨‍🏫</span> ${lesson.teacher}</span>
-                  </div>
+                  <div class="lesson-name" style="color:var(--text-empty);font-style:italic;">🚫 Пару отменили</div>
                 </div>
-                <button class="lesson-add-hw" data-day="${lesson.day}" data-subject="${lesson.name}" title="Добавить домашнее задание">➕</button>
               </div>
             `;
-          });
+          } else {
+            lessonsInSlot.forEach(lesson => {
+              const timeDisplay = `${slot.start} – ${slot.end}`;
+              const isCurrent = isToday && currentTime >= slot.start && currentTime <= slot.end;
+              const currentClass = isCurrent ? 'lesson-item current' : 'lesson-item';
+              const replacementBadge = lesson.isReplacement ? ' 🔄' : '';
+              html += `
+                <div class="${currentClass}">
+                  <div class="lesson-time">${timeDisplay}</div>
+                  <div class="lesson-info">
+                    <div class="lesson-name">${lesson.name}${replacementBadge}</div>
+                    <div class="lesson-meta">
+                      <span><span class="icon">🏛️</span> ${lesson.room}</span>
+                      <span><span class="icon">👨‍🏫</span> ${lesson.teacher}</span>
+                    </div>
+                  </div>
+                  <button class="lesson-add-hw" data-day="${lesson.day}" data-subject="${lesson.name}" title="Добавить домашнее задание">➕</button>
+                </div>
+              `;
+            });
+          }
         } else {
           // Пустой слот
           const emptyText = (slot.start === '10:00') ? '😴 Можно выспаться' : 'Нет пары';
@@ -290,7 +306,7 @@ export function renderNextLesson(container, timeSlots, lessons, holidays, startR
   const todayDate = getDateByDayIndex(startRef, realWeek, todayIdx);
 
   // Получаем занятия на сегодня с учётом корректировок
-  let todayLessons = getLessonsForDate(todayIdx, todayDate, realWeek, holidays, lessons, tempSchedule, timeSlots);
+  let todayLessons = getLessonsForDate(todayIdx, todayDate, realWeek, holidays, lessons, tempSchedule, timeSlots).filter(l => !l.isCancelled);
   // Сортируем по слотам
   todayLessons.sort((a, b) => a.slot - b.slot);
 
@@ -318,7 +334,7 @@ export function renderNextLesson(container, timeSlots, lessons, holidays, startR
         weekNum = realWeek + 1;
       }
       const checkDate = getDateByDayIndex(startRef, weekNum, day);
-      const dayLessons = getLessonsForDate(day, checkDate, weekNum, holidays, lessons, tempSchedule, timeSlots);
+      const dayLessons = getLessonsForDate(day, checkDate, weekNum, holidays, lessons, tempSchedule, timeSlots).filter(l => !l.isCancelled);
       if (dayLessons.length > 0) {
         nextLesson = dayLessons[0]; // берём первую пару дня
         targetDay = day;
