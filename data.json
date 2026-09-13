@@ -95,6 +95,13 @@
         { "slot": 3, "name": "Замена (русский язык)", "room": "555", "teacher": "Татьяна","todo":"replace" },
         { "slot": 2, "todo":"delete" }
       ]
+    },
+    {
+      "date": "14.09.25",
+      "lessons": [
+        
+        { "slot": 4, "todo":"delete" }
+      ]
     }
   ]
 }
