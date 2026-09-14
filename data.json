@@ -25,7 +25,7 @@
       "day": 1,
       "name": "Понедельник",
       "lessons": [
-        { "slot": 0, "name": "Математические методы в психологии", "room": "414", "teacher": "Гурова Е.И.", "weekType": "both" },
+        { "slot": 0, "name": "Математические методы в психологии", "room": "400", "teacher": "Гурова Е.И.", "weekType": "both" },
         { "slot": 1, "name": "Социальная психология", "room": "317", "teacher": "Борискина А.А.", "weekType": "both" },
         { "slot": 2, "name": "Социальная психология", "room": "414", "teacher": "Борискина А.А.", "weekType": "both" },
         { "slot": 3, "name": "Иностранный язык", "room": "317", "teacher": "Татаринова О.В.", "weekType": "both" },
